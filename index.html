@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Attractor Canvas</title>
+<script type="text/javascript" src="../lib/jquery/dist/jquery.js"></script>
+<script type="text/javascript" src="../lib/jsdebug/debug.js"></script>
+<script type="text/javascript" src="../lib/colour_conversions/colour_conversions.js"></script>
+<script type="text/javascript" src="attractor.js"></script>
+</head>
+<body>
+
+<div style="float: left">
+<canvas id="canvas" width="400" height="400"></canvas>
+</div>
+
+<div id="controls">
+<table>
+<tr><td>a</td><td><input id="a"></td></tr>
+<tr><td>b</td><td><input id="b"></td></tr>
+<tr><td>c</td><td><input id="c"></td></tr>
+<tr><td>d</td><td><input id="d"></td></tr>
+<tr><td>Mouse X</td><td><input id="mousex" disabled="disabled"></td></tr>
+<tr><td>Mouse Y</td><td><input id="mousey" disabled="disabled"></td></tr>
+<tr><td>Centre X</td><td><input id="centrex"></td></tr>
+<tr><td>Centre Y</td><td><input id="centrey"></td></tr>
+<tr><td>Zoom</td><td><input id="zoom"></td></tr>
+<tr><td>Iterations</td><td><input id="iterations"></td></tr>
+</table>
+<button id="zoomin">Zoom in</button>
+<button id="zoomout">Zoom out</button>
+</div>
+
+<div style="clear: left">
+<span style="font-size: smaller">Brought to you by the HTML5 canvas and jQuery.</span>
+</div>
+
+
+</body>
+</html>
