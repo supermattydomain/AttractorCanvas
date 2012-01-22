@@ -76,11 +76,11 @@ function Attractor(canvas, params) {
 		setIterations: function(newIterations) {
 			this.iterations = newIterations;
 		},
-		toParamSetName: function() {
-			return ;
+		toParamSetName: function(params) {
+			return JSON.stringify(params);
 		},
-		fromParamSetName: function() {
-			return ;
+		fromParamSetName: function(params) {
+			return JSON.parse(params);
 		},
 		getParameterSet: function() {
 			return this.toParamSetName(this.params);
@@ -114,7 +114,7 @@ function Attractor(canvas, params) {
 			function updateFunc(myUpdateTimeout) {
 				this.context.clearRect(0, 0, this.canvas.width(), this.canvas.height());
 				this.imageData = this.context.getImageData(0, 0, this.canvas.width(), this.canvas.height());
-				var x = 1, y = 1, i,
+				var x = 1, y = 1, i, xmax = Math.pow(2, 32), xmin = -xmax, ymax = xmax, ymin = xmin, eta = Math.pow(10, -5),
 					left = this.colToX(0),
 					right = this.colToX(this.canvas.width()),
 					// These two are again inverted because of the Canvas' inverted Y co-ordinates
@@ -128,7 +128,18 @@ function Attractor(canvas, params) {
 						var r = this.yToRow(y), c = this.xToCol(x);
 						setPixel(this.imageData, c, r, 0, 0, 0, 255);
 					}
+					// Detect infinite attractors
+					if (x < xmin || x > xmax || y < ymin || y > ymax) {
+						debug('Infinite attractor');
+						break;
+					}
 					var next = this.iterateDeJong(x, y, this.params.a, this.params.b, this.params.c, this.params.d);
+					var dx = Math.abs(x - next.x), dy = Math.abs(y - next.y);
+					// Detect point attractors
+					if (dx < eta && dy < eta) {
+						debug('Point attractor');
+						break;
+					}
 					x = next.x, y = next.y;
 				}
 				this.context.putImageData(this.imageData, 0, 0);
@@ -152,6 +163,11 @@ $(function() {
 	var displayIterations = $('#iterations');
 	var displayParameterSet = $('#parameterset');
 	var attractor = new Attractor(canvas, Attractor.prototype.parameterSets[1]);
+	$(Attractor.prototype.parameterSets).each(function(i, parameterSet) {
+		var option = $(document.createElement('option'));
+		option.text(Attractor.prototype.toParamSetName(parameterSet));
+		displayParameterSet.append(option);
+	});
 	function updateControls() {
 		displayCentreX.val(attractor.getCentre()[0]);
 		displayCentreY.val(attractor.getCentre()[1]);
