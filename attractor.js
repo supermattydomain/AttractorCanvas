@@ -114,16 +114,39 @@ function Attractor(canvas, params) {
 			function updateFunc(myUpdateTimeout) {
 				this.context.clearRect(0, 0, this.canvas.width(), this.canvas.height());
 				this.imageData = this.context.getImageData(0, 0, this.canvas.width(), this.canvas.height());
-				var i, x = 1, y = 1, eta = Math.pow(10, -6), xe = x + eta, ye = y + eta, d = 0, lyapunov = 0,
+				var i,
+					// Initial co-ordinates of main point
+					x = 1, y = 1,
+					// A small value
+					eta = Math.pow(10, -12),
+					// Partner point, initially close to main point
+					xe = x + eta, ye = y + eta,
+					// Initial distance between main point and partner point
+					d0 = Math.SQRT2 * eta,
+					// Running total of Lyapunov exponent
+					lyapunov = 0,
+					// Number of steps included in calculation of largest Lyapunov exponent
+					lyapunovNumIter = 0,
+					// If the point exceeds these bounds, it is assumed to escape to infinity
 					xmax = Math.pow(2, 32), xmin = -xmax, ymax = xmax, ymin = xmin,
+					// Boundaries of drawing area in logical (x,y) co-ordinates
 					left = this.colToX(0),
 					right = this.colToX(this.canvas.width()),
 					// These two are again inverted because of the Canvas' inverted Y co-ordinates
 					top = this.rowToY(this.canvas.height()),
 					bottom = this.rowToY(0);
-				for (i = 0; i < this.iterations; i++) {
+				if (0 == eta) {
+					debug('Eta is 0');
+					return;
+				}
+				for (
+					i = 0;
+					i < this.iterations;
+					i++, x = next.x, y = next.y
+				) {
 					if (this.updateTimeout != myUpdateTimeout) {
-						return; // Abort - no longer the current render thread
+						debug('Stopped');
+						break; // No longer the current render thread
 					}
 					// Draw the corresponding pixel if it's in the imageData
 					if (x >= left && x < right && y >= top && y < bottom) {
@@ -143,17 +166,28 @@ function Attractor(canvas, params) {
 						debug('Point attractor');
 						break;
 					}
-					// Update running approximation of Lyapunov exponent
 					// Iterate the partner, originally 'close' point
 					var nexte = this.iterateDeJong(xe, ye, this.params.a, this.params.b, this.params.c, this.params.d);
-					var nextdx = next.x - nexte.x, nextdy = next.y - nexte.y;
-					var nextd = Math.sqrt(nextdx * nextdx + nextdy * nextdy);
-					if (d) {
-						lyapunov += (1 / this.iterations) * Math.log(nextd / d);
+					// Update running approximation of Lyapunov exponent if some way into interation.
+					// Values at start are discarded so as to give time to reach an attractor.
+					if (i > 1000) {
+						// Calculate current distance between main point and partner point
+						nextdx = next.x - nexte.x;
+						nextdy = next.y - nexte.y;
+						var nextd = Math.sqrt(nextdx * nextdx + nextdy * nextdy);
+						lyapunov += Math.log(nextd / d0);
+						lyapunovNumIter++;
+						// Readjust partner point to be closer to main point
+						xe = next.x + d0 * nextdx / nextd;
+						ye = next.y + d0 * nextdy / nextd;
 					}
-					x = next.x, y = next.y, xe = nexte.x, ye = nexte.y, d = nextd;
 				}
-				debug('Lyapunov exponent: ' , lyapunov);
+				if (lyapunovNumIter) {
+					// Divide sum by number of counted values to get average,
+					// which should be approximately greatest Lyapunov exponent.
+					lyapunov /= lyapunovNumIter;
+					debug('Lyapunov exponent: ' , lyapunov);
+				}
 				this.context.putImageData(this.imageData, 0, 0);
 			}
 			var that = this;
@@ -226,6 +260,9 @@ $(function() {
 	$('#zoomout').on('click', function() {
 		attractor.zoomOutBy(2);
 		update();
+	});
+	$('#stop').on('click', function() {
+		attractor.stop();
 	});
 	update();
 });
