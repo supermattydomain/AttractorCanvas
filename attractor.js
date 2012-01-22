@@ -30,7 +30,7 @@ function Attractor(canvas, params) {
 	this.imageData = this.context.getImageData(0, 0, this.canvas.width(), this.canvas.height());
 	this.centreX = 0;
 	this.centreY = 0;
-	this.iterations = 10000;
+	this.iterations = 100000;
 	this.zoom = Math.min(this.imageData.width, this.imageData.height) / 4;
 }
 
