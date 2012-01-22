@@ -114,7 +114,8 @@ function Attractor(canvas, params) {
 			function updateFunc(myUpdateTimeout) {
 				this.context.clearRect(0, 0, this.canvas.width(), this.canvas.height());
 				this.imageData = this.context.getImageData(0, 0, this.canvas.width(), this.canvas.height());
-				var x = 1, y = 1, i, xmax = Math.pow(2, 32), xmin = -xmax, ymax = xmax, ymin = xmin, eta = Math.pow(10, -5),
+				var i, x = 1, y = 1, eta = Math.pow(10, -6), xe = x + eta, ye = y + eta, d = 0, lyapunov = 0,
+					xmax = Math.pow(2, 32), xmin = -xmax, ymax = xmax, ymin = xmin,
 					left = this.colToX(0),
 					right = this.colToX(this.canvas.width()),
 					// These two are again inverted because of the Canvas' inverted Y co-ordinates
@@ -124,6 +125,7 @@ function Attractor(canvas, params) {
 					if (this.updateTimeout != myUpdateTimeout) {
 						return; // Abort - no longer the current render thread
 					}
+					// Draw the corresponding pixel if it's in the imageData
 					if (x >= left && x < right && y >= top && y < bottom) {
 						var r = this.yToRow(y), c = this.xToCol(x);
 						setPixel(this.imageData, c, r, 0, 0, 0, 255);
@@ -133,6 +135,7 @@ function Attractor(canvas, params) {
 						debug('Infinite attractor');
 						break;
 					}
+					// Iterate the point
 					var next = this.iterateDeJong(x, y, this.params.a, this.params.b, this.params.c, this.params.d);
 					var dx = Math.abs(x - next.x), dy = Math.abs(y - next.y);
 					// Detect point attractors
@@ -140,8 +143,17 @@ function Attractor(canvas, params) {
 						debug('Point attractor');
 						break;
 					}
-					x = next.x, y = next.y;
+					// Update running approximation of Lyapunov exponent
+					// Iterate the partner, originally 'close' point
+					var nexte = this.iterateDeJong(xe, ye, this.params.a, this.params.b, this.params.c, this.params.d);
+					var nextdx = next.x - nexte.x, nextdy = next.y - nexte.y;
+					var nextd = Math.sqrt(nextdx * nextdx + nextdy * nextdy);
+					if (d) {
+						lyapunov += (1 / this.iterations) * Math.log(nextd / d);
+					}
+					x = next.x, y = next.y, xe = nexte.x, ye = nexte.y, d = nextd;
 				}
+				debug('Lyapunov exponent: ' , lyapunov);
 				this.context.putImageData(this.imageData, 0, 0);
 			}
 			var that = this;
