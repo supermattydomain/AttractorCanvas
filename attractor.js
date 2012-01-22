@@ -32,86 +32,6 @@ function Attractor(canvas, params) {
 	this.centreY = 0;
 	this.iterations = 10000;
 	this.zoom = Math.min(this.imageData.width, this.imageData.height) / 4;
-	this.colToX = function(c) {
-		return (c - this.imageData.width  / 2) /  this.zoom + this.centreX;
-	};
-	this.rowToY = function(r) {
-		// Inversion due to the canvas' inverted-Y co-ordinate system.
-		return (r - this.imageData.height / 2) / -this.zoom + this.centreY;
-	};
-	this.xToCol = function(x) {
-		return Math.round((x - this.centreX) *  this.zoom + this.imageData.width  / 2);
-	};
-	this.yToRow = function(y) {
-		return Math.round((y - this.centreY) * -this.zoom + this.imageData.height / 2);
-	};
-	this.update = function() {
-		this.stop();
-		function updateFunc(myUpdateTimeout) {
-			this.context.clearRect(0, 0, this.canvas.width(), this.canvas.height());
-			this.imageData = this.context.getImageData(0, 0, this.canvas.width(), this.canvas.height());
-			var x = 1, y = 1, i;
-			for (i = 0; i < this.iterations; i++) {
-				if (this.updateTimeout != myUpdateTimeout) {
-					return; // Abort - no longer the current render thread
-				}
-				var r = this.yToRow(y), c = this.xToCol(x);
-				setPixel(this.imageData, c, r, 0, 0, 0, 255);
-				var next = this.iterateDeJong(x, y, this.params.a, this.params.b, this.params.c, this.params.d);
-				x = next.x, y = next.y;
-			}
-			this.context.putImageData(this.imageData, 0, 0);
-		}
-		var that = this;
-		this.updateTimeout = setTimeout(function() {
-			updateFunc.call(that, that.updateTimeout);
-		});
-	};
-	this.stop = function() {
-		clearTimeout(this.updateTimeout);
-		this.updateTimeout = null;
-	};
-	this.getCentre = function() {
-		return [ this.centreX, this.centreY ];
-	};
-	this.setCentre = function(rl, im) {
-		this.centreX = rl;
-		this.centreY = im;
-	};
-	this.getZoom = function() {
-		return this.zoom;
-	};
-	this.setZoom = function(newZoom) {
-		this.zoom = newZoom;
-		return this.zoom;
-	};
-	this.zoomBy = function(factor) {
-		this.zoom *= factor;
-		return this.zoom;
-	};
-	this.zoomOutBy = function(factor) {
-		return this.zoomBy(1 / factor);
-	};
-	this.zoomInBy = this.zoomBy;
-	this.getIterations = function() {
-		return this.iterations;
-	};
-	this.setIterations = function(newIterations) {
-		this.iterations = newIterations;
-	};
-	this.toParamSetName = function() {
-		return ;
-	};
-	this.fromParamSetName = function() {
-		return ;
-	};
-	this.getParameterSet = function() {
-		return this.toParamSetName(this.params);
-	};
-	this.setParameterSet = function(newParamsName) {
-		this.params = this.fromParamSetName(newParamsName);
-		return this.params;
-	};
 }
 
 (function($) {
@@ -125,14 +45,101 @@ function Attractor(canvas, params) {
 			{ a: -1.21448970, b: -0.59580576, c: -2.2561285, d:  0.960403900 },
 			{ a:  1.41914030, b: -2.28415230, c:  2.4275403, d: -2.177196000 }
 		],
+		stop: function() {
+			clearTimeout(this.updateTimeout);
+			this.updateTimeout = null;
+		},
+		getCentre: function() {
+			return [ this.centreX, this.centreY ];
+		},
+		setCentre: function(rl, im) {
+			this.centreX = rl;
+			this.centreY = im;
+		},
+		getZoom: function() {
+			return this.zoom;
+		},
+		setZoom: function(newZoom) {
+			this.zoom = newZoom;
+			return this.zoom;
+		},
+		zoomBy: function(factor) {
+			this.zoom *= factor;
+			return this.zoom;
+		},
+		zoomOutBy: function(factor) {
+			return this.zoomBy(1 / factor);
+		},
+		getIterations: function() {
+			return this.iterations;
+		},
+		setIterations: function(newIterations) {
+			this.iterations = newIterations;
+		},
+		toParamSetName: function() {
+			return ;
+		},
+		fromParamSetName: function() {
+			return ;
+		},
+		getParameterSet: function() {
+			return this.toParamSetName(this.params);
+		},
+		setParameterSet: function(newParamsName) {
+			this.params = this.fromParamSetName(newParamsName);
+			return this.params;
+		},
 		// Iterate the de Jong map.
 		iterateDeJong: function(x, y, a, b, c, d) {
 			return {
 				x: Math.sin(a * y) - Math.cos(b * x),
 				y: Math.sin(c * x) - Math.cos(d * y)
 			};
+		},
+		colToX: function(c) {
+			return (c - this.imageData.width  / 2) /  this.zoom + this.centreX;
+		},
+		rowToY: function(r) {
+			// Inversion due to the canvas' inverted-Y co-ordinate system.
+			return (r - this.imageData.height / 2) / -this.zoom + this.centreY;
+		},
+		xToCol: function(x) {
+			return Math.round((x - this.centreX) *  this.zoom + this.imageData.width  / 2);
+		},
+		yToRow: function(y) {
+			return Math.round((y - this.centreY) * -this.zoom + this.imageData.height / 2);
+		},
+		update: function() {
+			this.stop();
+			function updateFunc(myUpdateTimeout) {
+				this.context.clearRect(0, 0, this.canvas.width(), this.canvas.height());
+				this.imageData = this.context.getImageData(0, 0, this.canvas.width(), this.canvas.height());
+				var x = 1, y = 1, i,
+					left = this.colToX(0),
+					right = this.colToX(this.canvas.width()),
+					// These two are again inverted because of the Canvas' inverted Y co-ordinates
+					top = this.rowToY(this.canvas.height()),
+					bottom = this.rowToY(0);
+				for (i = 0; i < this.iterations; i++) {
+					if (this.updateTimeout != myUpdateTimeout) {
+						return; // Abort - no longer the current render thread
+					}
+					if (x >= left && x < right && y >= top && y < bottom) {
+						var r = this.yToRow(y), c = this.xToCol(x);
+						setPixel(this.imageData, c, r, 0, 0, 0, 255);
+					}
+					var next = this.iterateDeJong(x, y, this.params.a, this.params.b, this.params.c, this.params.d);
+					x = next.x, y = next.y;
+				}
+				this.context.putImageData(this.imageData, 0, 0);
+			}
+			var that = this;
+			this.updateTimeout = setTimeout(function() {
+				updateFunc.call(that, that.updateTimeout);
+			});
 		}
 	});
+	Attractor.prototype.zoomInBy = Attractor.prototype.zoomBy;
 })(jQuery);
 
 $(function() {
@@ -192,5 +199,5 @@ $(function() {
 		attractor.zoomOutBy(2);
 		update();
 	});
-	attractor.update();
+	update();
 });
