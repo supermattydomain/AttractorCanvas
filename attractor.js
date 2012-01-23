@@ -23,27 +23,100 @@ function setPixel(imageData, x, y, r, g, b, a) {
 	imageData.data[i + 3] = a;
 }
 
-function Attractor(canvas, params) {
+function Attractor(canvas) {
 	this.canvas = canvas;
-	this.params = params;
 	this.context = this.canvas[0].getContext("2d");
 	this.imageData = this.context.getImageData(0, 0, this.canvas.width(), this.canvas.height());
 	this.centreX = 0;
 	this.centreY = 0;
 	this.iterations = 100000;
 	this.zoom = Math.min(this.imageData.width, this.imageData.height) / 4;
+	this.currentSystem = 0;
+	this.currentParameterSet = 0;
 }
 
 (function($) {
 	$.extend(Attractor.prototype, {
-		// Some interesting values given by Jared on his site
-		parameterSets: [
-			{ a: -1.97378990, b: -0.29585147, c: -2.3156738, d:  0.040812516 },
-			{ a: -0.89567065, b:  1.59095860, c:  1.8515863, d:  2.197430600 },
-			{ a:  2.03372000, b: -0.78980076, c: -0.5964787, d: -1.758290150 },
-			{ a: -2.09892100, b: -0.30945826, c:  1.4205422, d:  0.232973580 },
-			{ a: -1.21448970, b: -0.59580576, c: -2.2561285, d:  0.960403900 },
-			{ a:  1.41914030, b: -2.28415230, c:  2.4275403, d: -2.177196000 }
+		systems: [
+			/**
+			 * Attractor due to Peter de Jong.
+			 * Non-linear Cartesian mapping, Lyapunov exponent > 0 (chaotic).
+			 */
+			{
+				name: 'Peter de Jong',
+				initialValues: { x: 1, y: 1 },
+				initialZoom: 100,
+				iterate: function(x, y, params) {
+					return {
+						x: Math.sin(params.a * y) - Math.cos(params.b * x),
+						y: Math.sin(params.c * x) - Math.cos(params.d * y)
+					};
+				},
+				parameterSets: [
+					// Some interesting values given by Jared Tarbell on his site
+					{ a: -0.89567065, b:  1.59095860, c:  1.8515863, d:  2.197430600 },
+					{ a: -1.97378990, b: -0.29585147, c: -2.3156738, d:  0.040812516 },
+					{ a:  2.03372000, b: -0.78980076, c: -0.5964787, d: -1.758290150 },
+					{ a: -2.09892100, b: -0.30945826, c:  1.4205422, d:  0.232973580 },
+					{ a: -1.21448970, b: -0.59580576, c: -2.2561285, d:  0.960403900 },
+					{ a:  1.41914030, b: -2.28415230, c:  2.4275403, d: -2.177196000 },
+					// Futher parameters found at:
+					// http://www.a-matters.info/Geometry/Complex-System/peter-de-jong-attractor.html
+					{ a: -0.5206013, b: -2.083939, c: 0.7189889, d: -2.40354 },
+					{ a: -2.830518, b: 1.967394, c: 1.700244, d: 1.746933 }
+				]
+			},
+			/**
+			 * x' = a0 + a1 x + a2 x^2 + a3 xy + a4 y^2 + a5 y
+			 * y' = a6 + a7 x + a8 x^2 + a9 xy + a10 y^2 + a11 y
+			 */
+			{
+				name: 'Quadratic map',
+				initialValues: { x: 1, y: 1 },
+				initialZoom: 100,
+				iterate: function(x, y, params) {
+					return {
+						x: params.a0 + params.a1 * x + params.a2 * x * x + params.a3 * x * y + params.a4 * y + params.a5 * y * y,
+						y: params.b0 + params.b1 * x + params.b2 * x * x + params.b3 * x * y + params.b4 * y + params.b5 * y * y
+					};
+				},
+				parameterSets: [
+				    {
+				    	// TODO
+				    }
+				]
+			},
+			{
+				name: 'Duffing',
+				initialValues: { x: 1, y: 1 },
+				initialZoom: 100,
+				iterate: function(x, y, params) {
+					return {
+						x: y,
+						y: -params.b * x + params.a * y - (y * y * y)
+					};
+				},
+				parameterSets: [
+					{ a: 2.75, b: 0.2 }
+				]
+			},
+			{
+				name: 'Hénon',
+				initialValues: { x: 0, y: 0 },
+				initialZoom: 30,
+				iterate: function(x, y, params) {
+					return {
+						x: 1 - params.a * x * x + y,
+						y: params.b * x
+					};
+				},
+				parameterSets: [
+					{ a: 0.2, b: 0.9991 },
+					{ a: 1.4, b: 0.3 },
+					{ a: 0.2, b: 1.01 },
+					{ a: 0.2, b: -0.99999 }
+				]
+			}
 		],
 		stop: function() {
 			clearTimeout(this.updateTimeout);
@@ -76,25 +149,26 @@ function Attractor(canvas, params) {
 		setIterations: function(newIterations) {
 			this.iterations = newIterations;
 		},
-		toParamSetName: function(params) {
-			return JSON.stringify(params);
+		getSystemIndex: function() {
+			return this.currentSystem;
 		},
-		fromParamSetName: function(params) {
-			return JSON.parse(params);
+		setSystemIndex: function(newSystemIdx) {
+			this.currentSystem = newSystemIdx;
+			this.zoom = this.systems[this.currentSystem].initialZoom;
+			return this.currentSystem;
+		},
+		getParameterSetIndex: function() {
+			return this.currentParameterSet;
+		},
+		setParameterSetIndex: function(newParamSetIdx) {
+			this.currentParameterSet = newParamSetIdx;
+			return this.currentParameterSet;
+		},
+		getSystem: function() {
+			return this.systems[this.currentSystem];
 		},
 		getParameterSet: function() {
-			return this.toParamSetName(this.params);
-		},
-		setParameterSet: function(newParamsName) {
-			this.params = this.fromParamSetName(newParamsName);
-			return this.params;
-		},
-		// Iterate the de Jong map.
-		iterateDeJong: function(x, y, a, b, c, d) {
-			return {
-				x: Math.sin(a * y) - Math.cos(b * x),
-				y: Math.sin(c * x) - Math.cos(d * y)
-			};
+			return this.systems[this.currentSystem].parameterSets[this.currentParameterSet];
 		},
 		colToX: function(c) {
 			return (c - this.imageData.width  / 2) /  this.zoom + this.centreX;
@@ -115,8 +189,10 @@ function Attractor(canvas, params) {
 				this.context.clearRect(0, 0, this.canvas.width(), this.canvas.height());
 				this.imageData = this.context.getImageData(0, 0, this.canvas.width(), this.canvas.height());
 				var i,
+					sys = this.getSystem(),
+					params = this.getParameterSet(),
 					// Initial co-ordinates of main point
-					x = 1, y = 1,
+					x = sys.initialValues.x, y = sys.initialValues.y,
 					// A small value
 					eta = Math.pow(10, -12),
 					// Partner point, initially close to main point
@@ -159,7 +235,8 @@ function Attractor(canvas, params) {
 						break;
 					}
 					// Iterate the point
-					var next = this.iterateDeJong(x, y, this.params.a, this.params.b, this.params.c, this.params.d);
+					// var next = this.iterateDeJong(x, y, this.params.a, this.params.b, this.params.c, this.params.d);
+					var next = sys.iterate.call(sys, x, y, params);
 					var dx = Math.abs(x - next.x), dy = Math.abs(y - next.y);
 					// Detect point attractors
 					if (dx < eta && dy < eta) {
@@ -167,9 +244,11 @@ function Attractor(canvas, params) {
 						break;
 					}
 					// Iterate the partner, originally 'close' point
-					var nexte = this.iterateDeJong(xe, ye, this.params.a, this.params.b, this.params.c, this.params.d);
+					var nexte = sys.iterate.call(sys, xe, ye, params);
 					// Update running approximation of Lyapunov exponent if some way into interation.
 					// Values at start are discarded so as to give time to reach an attractor.
+					// FIXME: I doubt that the following calculations are correct.
+					// Need to test this software with a known attractor with known Lyapunov exponent.
 					if (i > 1000) {
 						// Calculate current distance between main point and partner point
 						nextdx = next.x - nexte.x;
@@ -177,14 +256,14 @@ function Attractor(canvas, params) {
 						var nextd = Math.sqrt(nextdx * nextdx + nextdy * nextdy);
 						lyapunov += Math.log(nextd / d0);
 						lyapunovNumIter++;
-						// Readjust partner point to be closer to main point
+						// Re-adjust partner point to be closer to main point
 						xe = next.x + d0 * nextdx / nextd;
 						ye = next.y + d0 * nextdy / nextd;
 					}
 				}
 				if (lyapunovNumIter) {
 					// Divide sum by number of counted values to get average,
-					// which should be approximately greatest Lyapunov exponent.
+					// which should be approximately equal to the greatest Lyapunov exponent.
 					lyapunov /= lyapunovNumIter;
 					debug('Lyapunov exponent: ' , lyapunov);
 				}
@@ -207,19 +286,33 @@ $(function() {
 	var displayCentreY = $('#centrey');
 	var displayZoom = $('#zoom');
 	var displayIterations = $('#iterations');
+	var displaySystem = $('#system');
 	var displayParameterSet = $('#parameterset');
-	var attractor = new Attractor(canvas, Attractor.prototype.parameterSets[1]);
-	$(Attractor.prototype.parameterSets).each(function(i, parameterSet) {
-		var option = $(document.createElement('option'));
-		option.text(Attractor.prototype.toParamSetName(parameterSet));
-		displayParameterSet.append(option);
-	});
+	var attractor = new Attractor(canvas);
+	function populateSystems() {
+		$(Attractor.prototype.systems).each(function(i, system) {
+			var option = $(document.createElement('option'));
+			option.text(system.name);
+			option.val(i);
+			displaySystem.append(option);
+		});
+	}
+	function populateParameterSets(systemIndex) {
+		displayParameterSet.empty();
+		$(Attractor.prototype.systems[systemIndex].parameterSets).each(function(i, parameterSet) {
+			var option = $(document.createElement('option'));
+			option.text(JSON.stringify(parameterSet));
+			option.val(i);
+			displayParameterSet.append(option);
+		});
+	}
 	function updateControls() {
 		displayCentreX.val(attractor.getCentre()[0]);
 		displayCentreY.val(attractor.getCentre()[1]);
 		displayZoom.val(attractor.getZoom());
 		displayIterations.val(attractor.getIterations());
-		displayParameterSet.val(attractor.getParameterSet());
+		displaySystem.val(attractor.getSystemIndex());
+		displayParameterSet.val(attractor.getParameterSetIndex());
 	}
 	function update() {
 		updateControls();
@@ -249,8 +342,15 @@ $(function() {
 		attractor.setIterations(parseInt($(this).val(), 10));
 		update();
 	});
+	displaySystem.change(function() {
+		var systemIndex = $(this).val();
+		attractor.setSystemIndex(systemIndex);
+		populateParameterSets(systemIndex);
+		attractor.setParameterSetIndex(0);
+		update();
+	});
 	displayParameterSet.change(function() {
-		attractor.setParameterSet($(this).val());
+		attractor.setParameterSetIndex($(this).val());
 		update();
 	});
 	$('#zoomin').on('click', function() {
@@ -264,5 +364,7 @@ $(function() {
 	$('#stop').on('click', function() {
 		attractor.stop();
 	});
+	populateSystems();
+	populateParameterSets(0);
 	update();
 });
