@@ -15,28 +15,51 @@
  * 
  */
 
-function setPixel(imageData, x, y, r, g, b, a) {
-	var i = (y * imageData.width * 4) + (x * 4);
-	imageData.data[i + 0] = r;
-	imageData.data[i + 1] = g;
-	imageData.data[i + 2] = b;
-	imageData.data[i + 3] = a;
-}
-
-function Attractor(canvas) {
-	this.canvas = canvas;
-	this.context = this.canvas[0].getContext("2d");
-	this.imageData = this.context.getImageData(0, 0, this.canvas.width(), this.canvas.height());
-	this.centreX = 0;
-	this.centreY = 0;
-	this.iterations = 100000;
-	this.zoom = Math.min(this.imageData.width, this.imageData.height) / 4;
-	this.currentSystem = 0;
-	this.currentParameterSet = 0;
-}
-
 (function($) {
+	function setPixel(imageData, x, y, r, g, b, a) {
+		var i = (y * imageData.width * 4) + (x * 4);
+		imageData.data[i + 0] = r;
+		imageData.data[i + 1] = g;
+		imageData.data[i + 2] = b;
+		imageData.data[i + 3] = a;
+	}
+	function Attractor(canvas) {
+		this.canvas = canvas;
+		this.context = this.canvas[0].getContext("2d");
+		this.imageData = this.context.getImageData(0, 0, this.canvas.width(), this.canvas.height());
+		this.centreX = 0;
+		this.centreY = 0;
+		this.iterations = 100000;
+		this.zoom = Math.min(this.imageData.width, this.imageData.height) / 4;
+		this.currentSystem = 0;
+		this.currentParameterSet = 0;
+		this.colourModeIndex = 0;
+	}
 	$.extend(Attractor.prototype, {
+		/**
+		 * Methods of colouring the points.
+		 */
+		colourModes: [
+		              {
+		               	  name: 'sine',
+		               	  getColour: function(i, r, c) {
+		               		  var r = Math.sin(i), g = Math.cos(i), b = -Math.sin(i);
+		               		  return [ 127 * (r + 1), 127 * (g + 1), 127 * (b + 1) ];
+		               	  }
+		              },
+		              {
+		               	  name: 'alternating',
+		               	  getColour: function(i, r, c) {
+		               		  return (i % 2) ? [ 255, 0, 0 ] : [ 0, 0, 255 ];
+		               	  }
+		              },
+		              {
+		            	  name: 'black',
+		            	  getColour: function(i, r, c) {
+		            		  return [ 0, 0, 0 ];
+		            	  }
+		              }
+		],
 		systems: [
 			/**
 			 * Attractor due to Peter de Jong.
@@ -121,6 +144,7 @@ function Attractor(canvas) {
 		stop: function() {
 			clearTimeout(this.updateTimeout);
 			this.updateTimeout = null;
+			return this;
 		},
 		getCentre: function() {
 			return [ this.centreX, this.centreY ];
@@ -128,26 +152,29 @@ function Attractor(canvas) {
 		setCentre: function(rl, im) {
 			this.centreX = rl;
 			this.centreY = im;
+			return this;
 		},
 		getZoom: function() {
 			return this.zoom;
 		},
 		setZoom: function(newZoom) {
 			this.zoom = newZoom;
-			return this.zoom;
+			return this;
 		},
 		zoomBy: function(factor) {
 			this.zoom *= factor;
-			return this.zoom;
+			return this;
 		},
 		zoomOutBy: function(factor) {
-			return this.zoomBy(1 / factor);
+			this.zoomBy(1 / factor);
+			return this;
 		},
 		getIterations: function() {
 			return this.iterations;
 		},
 		setIterations: function(newIterations) {
 			this.iterations = newIterations;
+			return this;
 		},
 		getSystemIndex: function() {
 			return this.currentSystem;
@@ -155,14 +182,14 @@ function Attractor(canvas) {
 		setSystemIndex: function(newSystemIdx) {
 			this.currentSystem = newSystemIdx;
 			this.zoom = this.systems[this.currentSystem].initialZoom;
-			return this.currentSystem;
+			return this;
 		},
 		getParameterSetIndex: function() {
 			return this.currentParameterSet;
 		},
 		setParameterSetIndex: function(newParamSetIdx) {
 			this.currentParameterSet = newParamSetIdx;
-			return this.currentParameterSet;
+			return this;
 		},
 		getSystem: function() {
 			return this.systems[this.currentSystem];
@@ -186,6 +213,16 @@ function Attractor(canvas) {
 		yToRow: function(y) {
 			return Math.round((y - this.centreY) * -this.zoom + this.imageData.height / 2);
 		},
+		getColourFunc: function() {
+			return this.colourModes[this.colourModeIndex].getColour;
+		},
+		getColourModeIndex: function() {
+			return this.colourModeIndex;
+		},
+		setColourModeIndex: function(newColourModeIndex) {
+			this.colourModeIndex = newColourModeIndex;
+			return this;
+		},
 		update: function() {
 			this.stop();
 			function updateFunc(myUpdateTimeout) {
@@ -194,6 +231,7 @@ function Attractor(canvas) {
 				var i,
 					sys = this.getSystem(),
 					params = this.getParameterSet(),
+					colourFunc = this.getColourFunc(),
 					// Initial co-ordinates of main point
 					x = sys.initialValues.x, y = sys.initialValues.y,
 					// A small value
@@ -230,7 +268,8 @@ function Attractor(canvas) {
 					// Draw the corresponding pixel if it's in the imageData
 					if (x >= left && x < right && y >= top && y < bottom) {
 						var r = this.yToRow(y), c = this.xToCol(x);
-						setPixel(this.imageData, c, r, 0, 0, 0, 255);
+						var rgb = colourFunc(i, r, c);
+						setPixel(this.imageData, c, r, rgb[0], rgb[1], rgb[2], 255);
 					}
 					// Detect infinite attractors
 					if (x < xmin || x > xmax || y < ymin || y > ymax) {
@@ -279,97 +318,112 @@ function Attractor(canvas) {
 		}
 	});
 	Attractor.prototype.zoomInBy = Attractor.prototype.zoomBy;
-})(jQuery);
 
-$(function() {
-	var canvas = $('#canvas');
-	var displayMouseX = $('#mousex');
-	var displayMouseY = $('#mousey');
-	var displayCentreX = $('#centrex');
-	var displayCentreY = $('#centrey');
-	var displayZoom = $('#zoom');
-	var displayIterations = $('#iterations');
-	var displaySystem = $('#system');
-	var displayParameterSet = $('#parameterset');
-	var displayIterFunc = $('#iterfunc');
-	var attractor = new Attractor(canvas);
-	function populateSystems() {
-		$(Attractor.prototype.systems).each(function(i, system) {
-			var option = $(document.createElement('option'));
-			option.text(system.name);
-			option.val(i);
-			displaySystem.append(option);
+	$(function() {
+		var canvas = $('#canvas');
+		var displayMouseX = $('#mousex');
+		var displayMouseY = $('#mousey');
+		var displayCentreX = $('#centrex');
+		var displayCentreY = $('#centrey');
+		var displayZoom = $('#zoom');
+		var displayIterations = $('#iterations');
+		var displaySystem = $('#system');
+		var displayParameterSet = $('#parameterset');
+		var displayColourMode = $('#colourMode');
+		var displayIterFunc = $('#iterfunc');
+		var attractor = new Attractor(canvas);
+		function populateSystems() {
+			$(Attractor.prototype.systems).each(function(i, system) {
+				var option = $(document.createElement('option'));
+				option.text(system.name);
+				option.val(i);
+				displaySystem.append(option);
+			});
+		}
+		function populateParameterSets(systemIndex) {
+			displayParameterSet.empty();
+			$(Attractor.prototype.systems[systemIndex].parameterSets).each(function(i, parameterSet) {
+				var option = $(document.createElement('option'));
+				option.text(JSON.stringify(parameterSet));
+				option.val(i);
+				displayParameterSet.append(option);
+			});
+		}
+		function populateColourModes() {
+			$(Attractor.prototype.colourModes).each(function(i, colourMode) {
+				var option = $(document.createElement('option'));
+				option.text(colourMode.name);
+				option.val(i);
+				displayColourMode.append(option);
+			});
+		}
+		function updateControls() {
+			displayCentreX.val(attractor.getCentre()[0]);
+			displayCentreY.val(attractor.getCentre()[1]);
+			displayZoom.val(attractor.getZoom());
+			displayIterations.val(attractor.getIterations());
+			displaySystem.val(attractor.getSystemIndex());
+			displayParameterSet.val(attractor.getParameterSetIndex());
+			displayColourMode.val(attractor.getColourModeIndex());
+			displayIterFunc.val(attractor.getIterationFunction().toString());
+		}
+		function update() {
+			updateControls();
+			attractor.update();
+		}
+		canvas.on('mousemove', function(event) {
+			displayMouseX.val(attractor.colToX(event.pageX - canvas.position().left));
+			displayMouseY.val(attractor.rowToY(event.pageY - canvas.position().top));
+		}).on('click', function(event) {
+			attractor.setCentre(attractor.colToX(event.pageX - canvas.position().left), attractor.rowToY(event.pageY - canvas.position().top));
+			attractor.zoomInBy(2);
+			update();
 		});
-	}
-	function populateParameterSets(systemIndex) {
-		displayParameterSet.empty();
-		$(Attractor.prototype.systems[systemIndex].parameterSets).each(function(i, parameterSet) {
-			var option = $(document.createElement('option'));
-			option.text(JSON.stringify(parameterSet));
-			option.val(i);
-			displayParameterSet.append(option);
+		displayCentreX.on('change', function() {
+			attractor.setCentre(parseFloat($(this).val()), attractor.getCentre()[1]);
+			update();
 		});
-	}
-	function updateControls() {
-		displayCentreX.val(attractor.getCentre()[0]);
-		displayCentreY.val(attractor.getCentre()[1]);
-		displayZoom.val(attractor.getZoom());
-		displayIterations.val(attractor.getIterations());
-		displaySystem.val(attractor.getSystemIndex());
-		displayParameterSet.val(attractor.getParameterSetIndex());
-		displayIterFunc.val(attractor.getIterationFunction().toString());
-	}
-	function update() {
-		updateControls();
-		attractor.update();
-	}
-	canvas.on('mousemove', function(event) {
-		displayMouseX.val(attractor.colToX(event.pageX - canvas.position().left));
-		displayMouseY.val(attractor.rowToY(event.pageY - canvas.position().top));
-	}).on('click', function(event) {
-		attractor.setCentre(attractor.colToX(event.pageX - canvas.position().left), attractor.rowToY(event.pageY - canvas.position().top));
-		attractor.zoomInBy(2);
+		displayCentreY.on('change', function() {
+			attractor.setCentre(attractor.getCentre()[0], parseFloat($(this).val()));
+			update();
+		});
+		displayZoom.on('change', function() {
+			attractor.setZoom(parseFloat($(this).val()));
+			update();
+		});
+		displayIterations.on('change', function() {
+			attractor.setIterations(parseInt($(this).val(), 10));
+			update();
+		});
+		displaySystem.change(function() {
+			var systemIndex = $(this).val();
+			attractor.setSystemIndex(systemIndex);
+			populateParameterSets(systemIndex);
+			attractor.setParameterSetIndex(0);
+			update();
+		});
+		displayParameterSet.change(function() {
+			attractor.setParameterSetIndex($(this).val());
+			update();
+		});
+		displayColourMode.change(function() {
+			attractor.setColourModeIndex($(this).val());
+			update();
+		});
+		$('#zoomin').on('click', function() {
+			attractor.zoomInBy(2);
+			update();
+		});
+		$('#zoomout').on('click', function() {
+			attractor.zoomOutBy(2);
+			update();
+		});
+		$('#stop').on('click', function() {
+			attractor.stop();
+		});
+		populateSystems();
+		populateParameterSets(0);
+		populateColourModes();
 		update();
 	});
-	displayCentreX.on('change', function() {
-		attractor.setCentre(parseFloat($(this).val()), attractor.getCentre()[1]);
-		update();
-	});
-	displayCentreY.on('change', function() {
-		attractor.setCentre(attractor.getCentre()[0], parseFloat($(this).val()));
-		update();
-	});
-	displayZoom.on('change', function() {
-		attractor.setZoom(parseFloat($(this).val()));
-		update();
-	});
-	displayIterations.on('change', function() {
-		attractor.setIterations(parseInt($(this).val(), 10));
-		update();
-	});
-	displaySystem.change(function() {
-		var systemIndex = $(this).val();
-		attractor.setSystemIndex(systemIndex);
-		populateParameterSets(systemIndex);
-		attractor.setParameterSetIndex(0);
-		update();
-	});
-	displayParameterSet.change(function() {
-		attractor.setParameterSetIndex($(this).val());
-		update();
-	});
-	$('#zoomin').on('click', function() {
-		attractor.zoomInBy(2);
-		update();
-	});
-	$('#zoomout').on('click', function() {
-		attractor.zoomOutBy(2);
-		update();
-	});
-	$('#stop').on('click', function() {
-		attractor.stop();
-	});
-	populateSystems();
-	populateParameterSets(0);
-	update();
-});
+})(jQuery);
