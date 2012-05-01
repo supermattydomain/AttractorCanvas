@@ -170,6 +170,9 @@ function Attractor(canvas) {
 		getParameterSet: function() {
 			return this.systems[this.currentSystem].parameterSets[this.currentParameterSet];
 		},
+		getIterationFunction: function() {
+			return this.systems[this.currentSystem].iterate;
+		},
 		colToX: function(c) {
 			return (c - this.imageData.width  / 2) /  this.zoom + this.centreX;
 		},
@@ -288,6 +291,7 @@ $(function() {
 	var displayIterations = $('#iterations');
 	var displaySystem = $('#system');
 	var displayParameterSet = $('#parameterset');
+	var displayIterFunc = $('#iterfunc');
 	var attractor = new Attractor(canvas);
 	function populateSystems() {
 		$(Attractor.prototype.systems).each(function(i, system) {
@@ -313,6 +317,7 @@ $(function() {
 		displayIterations.val(attractor.getIterations());
 		displaySystem.val(attractor.getSystemIndex());
 		displayParameterSet.val(attractor.getParameterSetIndex());
+		displayIterFunc.val(attractor.getIterationFunction().toString());
 	}
 	function update() {
 		updateControls();
