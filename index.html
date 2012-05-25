@@ -20,19 +20,20 @@
 
 <div id="controls">
 <table>
-<tr><td>Mouse X</td><td><input id="mousex" disabled="disabled"></td></tr>
-<tr><td>Mouse Y</td><td><input id="mousey" disabled="disabled"></td></tr>
+<tr><td>Mouse X</td><td><span id="mousex"></span></td></tr>
+<tr><td>Mouse Y</td><td><span id="mousey"></span></td></tr>
 <tr><td>Centre X</td><td><input id="centrex"></td></tr>
 <tr><td>Centre Y</td><td><input id="centrey"></td></tr>
-<tr><td>Zoom</td><td><input id="zoom"></td></tr>
-<tr><td>Iterations</td><td><input id="iterations"></td></tr>
+<tr><td>Zoom</td><td><input id="zoomFactor"></td></tr>
+<tr><td>Iterations</td><td><input id="iterationsMax"></td></tr>
 <tr><td>System</td><td><select id="system"></select></td></tr>
-<tr><td>Parameters</td><td><select id="parameterset"></select></td></tr>
-<tr><td>Colour mode</td><td><select id="colourMode"></select></td></tr>
-<tr><td>IterFunc</td><td><textarea id="iterfunc" disabled="disabled" rows="10" cols="80"></textarea></td></tr>
+<tr><td>Iteration Function</td><td><textarea id="iterFuncDetails" readonly="readonly" rows="10" cols="80"></textarea></td></tr>
+<tr><td>Parameter Set</td><td><select id="selectParameterSet"></select></td></tr>
+<tr><td>Parameter Values</td><td><textarea id="parameterSetDetails" readonly="readonly" rows="10" cols="80"></textarea></td></tr>
+<tr><td>Colour mode</td><td><select id="selectColourMode"></select></td></tr>
 </table>
-<button id="zoomin">Zoom in</button>
-<button id="zoomout">Zoom out</button>
+<button id="zoomIn">Zoom in</button>
+<button id="zoomOut">Zoom out</button>
 <button id="stop">Stop</button>
 </div>
 
