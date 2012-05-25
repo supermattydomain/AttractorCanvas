@@ -21,6 +21,12 @@ function compileFunc(code) {
 	);
 }
 
+function compileExpr(text) {
+	return eval(
+		'(' + text + ')'
+	);
+}
+
 (function($) {
 	function setPixel(imageData, x, y, r, g, b, a) {
 		var i = (y * imageData.width * 4) + (x * 4);
@@ -40,6 +46,11 @@ function compileFunc(code) {
 		this.currentSystem = 0;
 		this.currentParameterSet = 0;
 		this.colourModeIndex = 0;
+		// Append a custom parameter set to each system, initially identical to the last existing one
+		$(this.systems).each(function(i, system) {
+			var clone = jQuery.extend(true, {}, system.parameterSets[system.parameterSets.length - 1]);
+			system.parameterSets.push(clone);
+		});
 	}
 	$.extend(Attractor.prototype, {
 		/**
@@ -226,9 +237,13 @@ function compileFunc(code) {
 		 * @param func The iteration function to be used.
 		 */
 		setCustomIterationFunction: function(func) {
-			this.setSystemIndex(this.systems.length - 1);
-			this.setParameterSetIndex(0);
-			this.systems[this.currentSystem].iterate = func;
+			// Custom iteration function is always the last entry
+			this.systems[this.systems.length - 1].iterate = func;
+		},
+		setCustomParameterSet: function(parameterSet) {
+			// Custom parameter set is always the last entry
+			var system = this.systems[this.currentSystem];
+			system.parameterSets[system.parameterSets.length - 1] = parameterSet;
 		},
 		colToX: function(c) {
 			return (c - this.imageData.width  / 2) /  this.zoom + this.centreX;
@@ -452,8 +467,19 @@ function compileFunc(code) {
 			attractor.setParameterSetIndex(0);
 			update();
 		});
+		selectParameterSet.on('change', function() {
+			var parameterSetIndex = +$(this).val();
+			if (parameterSetIndex === $(this).children().length - 1) {
+				// Custom parameter set is always last entry
+				parameterSetDetails.removeAttr('readonly');
+			} else {
+				parameterSetDetails.attr('readonly', 'readonly');
+			}
+			attractor.setParameterSetIndex(parameterSetIndex);
+			update();
+		});
 		iterFuncDetails.on('change', function() {
-			var code = iterFuncDetails.val();
+			var code = $(this).val();
 			var func;
 			try {
 				func = compileFunc(code);
@@ -464,8 +490,15 @@ function compileFunc(code) {
 			attractor.setCustomIterationFunction(func);
 			update();
 		});
-		selectParameterSet.on('change', function() {
-			attractor.setParameterSetIndex($(this).val());
+		parameterSetDetails.on('change', function() {
+			var val, text = $(this).val();
+			try {
+				val = compileExpr(text);
+			} catch (e) {
+				debug('Cannot evaluate given expression: ' + expr + ': ' + e);
+				return;
+			}
+			attractor.setCustomParameterSet(val);
 			update();
 		});
 		selectColourMode.on('change', function() {
