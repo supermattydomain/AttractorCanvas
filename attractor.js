@@ -15,19 +15,12 @@
  * 
  */
 
-function compileFunc(code) {
-	return eval(
-		'(' + code + ')'
-	);
-}
-
-function compileExpr(text) {
-	return eval(
-		'(' + text + ')'
-	);
-}
-
 (function($) {
+	function compileExpr(text) {
+		return eval(
+			'(' + text + ')'
+		);
+	}
 	function setPixel(imageData, x, y, r, g, b, a) {
 		var i = (y * imageData.width * 4) + (x * 4);
 		imageData.data[i + 0] = r;
@@ -55,26 +48,29 @@ function compileExpr(text) {
 	$.extend(Attractor.prototype, {
 		/**
 		 * Methods of colouring the points.
+		 * These exist mostly to show that they don't work well!
+		 * There is no simple relationship between iteration count
+		 * and location of point for a chaotic attractor.
 		 */
 		colourModes: [
 		              {
-		               	  name: 'sine',
+		            	  name: 'Black',
+		            	  getColour: function(i, r, c) {
+		            		  return [ 0, 0, 0 ];
+		            	  }
+		              },
+		              {
+		               	  name: 'Sine',
 		               	  getColour: function(i, r, c) {
 		               		  var r = Math.sin(i), g = Math.cos(i), b = -Math.sin(i);
 		               		  return [ 127 * (r + 1), 127 * (g + 1), 127 * (b + 1) ];
 		               	  }
 		              },
 		              {
-		               	  name: 'alternating',
+		               	  name: 'Alternating',
 		               	  getColour: function(i, r, c) {
 		               		  return (i % 2) ? [ 255, 0, 0 ] : [ 0, 0, 255 ];
 		               	  }
-		              },
-		              {
-		            	  name: 'black',
-		            	  getColour: function(i, r, c) {
-		            		  return [ 0, 0, 0 ];
-		            	  }
 		              }
 		],
 		systems: [
@@ -112,17 +108,20 @@ function compileExpr(text) {
 			 */
 			{
 				name: 'Quadratic map',
-				initialValues: { x: 1, y: 1 },
+				initialValues: { x: 0.5, y: 0.5 },
 				initialZoom: 100,
 				iterate: function(x, y, params) {
 					return {
+						// FIXME: Sort this!
 						x: params.a0 + params.a1 * x + params.a2 * x * x + params.a3 * x * y + params.a4 * y + params.a5 * y * y,
 						y: params.b0 + params.b1 * x + params.b2 * x * x + params.b3 * x * y + params.b4 * y + params.b5 * y * y
 					};
 				},
 				parameterSets: [
+				    // TODO: Correct parameters for quadratic map
 				    {
-				    	// TODO
+				    	a0: 0, a1: 0, a2: 0, a3: 0, a4: 1, a5: 0,
+				    	b0: 0, b1: 0.7, b2: -0.7, b3: 0, b4: 0, b5: 0
 				    }
 				]
 			},
@@ -168,6 +167,7 @@ function compileExpr(text) {
 					};
 				},
 				parameterSets: [
+				                // TODO: Custom parameter set
 					{},
 				]
 			}
@@ -274,6 +274,7 @@ function compileExpr(text) {
 				this.context.clearRect(0, 0, this.canvas.width(), this.canvas.height());
 				this.imageData = this.context.getImageData(0, 0, this.canvas.width(), this.canvas.height());
 				var i,
+					minIterations = 50,
 					sys = this.getSystem(),
 					params = this.getParameterSet(),
 					colourFunc = this.getColourFunc(),
@@ -285,8 +286,6 @@ function compileExpr(text) {
 					xe = x + eta, ye = y + eta,
 					// Initial distance between main point and partner point
 					d0 = Math.SQRT2 * eta,
-					// Running total of Lyapunov exponent
-					lyapunov = 0,
 					// Number of steps included in calculation of largest Lyapunov exponent
 					lyapunovNumIter = 0,
 					// If the point exceeds these bounds, it is assumed to escape to infinity
@@ -297,6 +296,8 @@ function compileExpr(text) {
 					// These two are again inverted because of the Canvas' inverted Y co-ordinates
 					top = this.rowToY(this.canvas.height()),
 					bottom = this.rowToY(0);
+				// Running total of Lyapunov exponent
+				this.lyapunov = 0;
 				if (0 == eta) {
 					debug('Eta is 0');
 					return;
@@ -318,15 +319,19 @@ function compileExpr(text) {
 					}
 					// Detect infinite attractors
 					if (x < xmin || x > xmax || y < ymin || y > ymax) {
-						debug('Infinite attractor');
+						debug('Infinite attractor detected after ' + i + ' iterations');
 						break;
 					}
 					// Iterate the point
 					var next = sys.iterate.call(sys, x, y, params);
+					if (isNaN(next.x) || isNaN(next.y)) {
+						debug("IterFunc args were ", x, y, params);
+						throw "Iteration function returned NaN";
+					}
 					var dx = Math.abs(x - next.x), dy = Math.abs(y - next.y);
 					// Detect point attractors
-					if (dx < eta && dy < eta) {
-						debug('Point attractor');
+					if (dx < eta && dy < eta && i > minIterations) {
+						debug('Point attractor detected after ' + i + ' iterations');
 						break;
 					}
 					// Iterate the partner, originally 'close' point
@@ -340,12 +345,13 @@ function compileExpr(text) {
 						nextdx = next.x - nexte.x;
 						nextdy = next.y - nexte.y;
 						var nextd = Math.sqrt(nextdx * nextdx + nextdy * nextdy);
-						if (isNaN(lyapunov)) {
-							throw "NaN lyapunov exponent";
+						if (isNaN(this.lyapunov)) {
+							throw "NaN lyapunov exponent 1";
 						}
-						lyapunov += Math.log(nextd / d0);
-						if (isNaN(lyapunov)) {
-							throw "NaN lyapunov exponent";
+						this.lyapunov += Math.log(nextd / d0);
+						if (isNaN(this.lyapunov)) {
+							debug(this.lyapunov, nextd, d0);
+							throw "NaN lyapunov exponent 2";
 						}
 						lyapunovNumIter++;
 						// Re-adjust partner point to be closer to main point
@@ -356,11 +362,10 @@ function compileExpr(text) {
 				if (lyapunovNumIter) {
 					// Divide sum by number of counted values to get average,
 					// which should be approximately equal to the greatest Lyapunov exponent.
-					lyapunov /= lyapunovNumIter;
-					if (isNaN(lyapunov)) {
-						throw "NaN lyapunov exponent";
+					this.lyapunov /= lyapunovNumIter;
+					if (isNaN(this.lyapunov)) {
+						throw "NaN lyapunov exponent 3";
 					}
-					debug('Lyapunov exponent: ' , lyapunov);
 				}
 				this.context.putImageData(this.imageData, 0, 0);
 			}
@@ -368,12 +373,16 @@ function compileExpr(text) {
 			this.updateTimeout = setTimeout(function() {
 				updateFunc.call(that, that.updateTimeout);
 			});
+		},
+		getLyapunovExponent: function() {
+			return this.lyapunov;
 		}
 	});
 	Attractor.prototype.zoomInBy = Attractor.prototype.zoomBy;
 
 	$(function() {
 		var canvas = $('#canvas');
+		var displayLyapunovExponent = $('#lyapunovExponent');
 		var displayMouseX = $('#mousex');
 		var displayMouseY = $('#mousey');
 		var editCentreX = $('#centrex');
@@ -405,6 +414,8 @@ function compileExpr(text) {
 				option.val(i);
 				selectParameterSet.append(option);
 			});
+			// The last entry is the editable custom one; label it so.
+			selectParameterSet.find('option:last-child').text('Custom');
 		}
 		function populateColourModes() {
 			$(Attractor.prototype.colourModes).each(function(i, colourMode) {
@@ -428,6 +439,7 @@ function compileExpr(text) {
 		function update() {
 			updateControls();
 			attractor.update();
+			displayLyapunovExponent.text(attractor.getLyapunovExponent());
 		}
 		canvas.on('mousemove', function(event) {
 			displayMouseX.text(attractor.colToX(event.pageX - canvas.position().left));
@@ -482,7 +494,7 @@ function compileExpr(text) {
 			var code = $(this).val();
 			var func;
 			try {
-				func = compileFunc(code);
+				func = compileExpr(code);
 			} catch (e) {
 				debug('Cannot compile given code: ' + code + ': ' + e);
 				return;
