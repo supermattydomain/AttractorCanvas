@@ -46,31 +46,31 @@
 		 * and location of point for a chaotic attractor.
 		 */
 		colourModes: [
-		              {
-		            	  name: 'Prev X co-ord',
-		            	  getColour: function(i, r, c, previousX) {
-		            		  return hsv2rgb(360 * previousX, 1, 1);
-		            	  }
-		              },
-		              {
-		            	  name: 'Black',
-		            	  getColour: function(i, r, c, previousX) {
-		            		  return [ 0, 0, 0 ];
-		            	  }
-		              },
-		              {
-		               	  name: 'Sine',
-		               	  getColour: function(i, r, c, previousX) {
-		               		  var r = Math.sin(i), g = Math.cos(i), b = -Math.sin(i);
-		               		  return [ 127 * (r + 1), 127 * (g + 1), 127 * (b + 1) ];
-		               	  }
-		              },
-		              {
-		               	  name: 'Alternating',
-		               	  getColour: function(i, r, c, previousX) {
-		               		  return (i % 2) ? [ 255, 0, 0 ] : [ 0, 0, 255 ];
-		               	  }
-		              }
+			{
+				name: 'Prev X co-ord',
+				getColour: function(i, r, c, previousX) {
+					return hsv2rgb(360 * previousX, 1, 1);
+				}
+			},
+			{
+				name: 'Black',
+				getColour: function(i, r, c, previousX) {
+					return [ 0, 0, 0 ];
+				}
+			},
+			{
+				name: 'Sine',
+				getColour: function(i, r, c, previousX) {
+					var r = Math.sin(i), g = Math.cos(i), b = -Math.sin(i);
+					return [ 127 * (r + 1), 127 * (g + 1), 127 * (b + 1) ];
+				}
+			},
+			{
+				name: 'Alternating',
+				getColour: function(i, r, c, previousX) {
+					return (i % 2) ? [ 255, 0, 0 ] : [ 0, 0, 255 ];
+				}
+			}
 		],
 		systems: [
 			/**
@@ -207,8 +207,7 @@
 			}
 		],
 		stop: function() {
-			clearTimeout(this.updateTimeout);
-			this.updateTimeout = null;
+			this.running = false;
 			return this;
 		},
 		getCentre: function() {
@@ -303,75 +302,75 @@
 			return this;
 		},
 		update: function() {
+			var i = 0, that = this,
+				minIterations = 50,
+				sys = this.getSystem(),
+				params = this.getParameterSet(),
+				colourFunc = this.getColourFunc(),
+				// Initial co-ordinates of main point
+				x = sys.initialValues.x, y = sys.initialValues.y,
+				// A small value
+				eta = Math.pow(10, -12),
+				// Partner point, initially close to main point
+				xe = x + eta, ye = y + eta,
+				// Initial distance between main point and partner point
+				d0 = Math.SQRT2 * eta,
+				// Number of steps included in calculation of largest Lyapunov exponent
+				lyapunovNumIter = 0,
+				// If the point exceeds these bounds, it is assumed to escape to infinity
+				xmax = Math.pow(2, 32), xmin = -xmax, ymax = xmax, ymin = xmin,
+				// Boundaries of drawing area in logical (x,y) co-ordinates
+				left = this.colToX(0),
+				right = this.colToX(this.canvas.width()),
+				// These two are again inverted because of the Canvas' inverted Y co-ordinates
+				top = this.rowToY(this.canvas.height()),
+				bottom = this.rowToY(0),
+				// Previous X co-ordinate, for colouring
+				previousX = 0;
+			// Running total of Lyapunov exponent
+			this.lyapunov = 0;
 			this.stop();
-			function updateFunc(myUpdateTimeout) {
-				this.context.clearRect(0, 0, this.canvas.width(), this.canvas.height());
-				this.imageData = this.context.getImageData(0, 0, this.canvas.width(), this.canvas.height());
-				var i,
-					minIterations = 50,
-					sys = this.getSystem(),
-					params = this.getParameterSet(),
-					colourFunc = this.getColourFunc(),
-					// Initial co-ordinates of main point
-					x = sys.initialValues.x, y = sys.initialValues.y,
-					// A small value
-					eta = Math.pow(10, -12),
-					// Partner point, initially close to main point
-					xe = x + eta, ye = y + eta,
-					// Initial distance between main point and partner point
-					d0 = Math.SQRT2 * eta,
-					// Number of steps included in calculation of largest Lyapunov exponent
-					lyapunovNumIter = 0,
-					// If the point exceeds these bounds, it is assumed to escape to infinity
-					xmax = Math.pow(2, 32), xmin = -xmax, ymax = xmax, ymin = xmin,
-					// Boundaries of drawing area in logical (x,y) co-ordinates
-					left = this.colToX(0),
-					right = this.colToX(this.canvas.width()),
-					// These two are again inverted because of the Canvas' inverted Y co-ordinates
-					top = this.rowToY(this.canvas.height()),
-					bottom = this.rowToY(0),
-					// Previous X co-ordinate, for colouring
-					previousX = 0;
-				// Running total of Lyapunov exponent
-				this.lyapunov = 0;
-				if (0 == eta) {
-					debug('Eta is 0');
-					return;
-				}
-				for (
-					i = 0;
-					i < this.iterations;
+			this.running = true;
+			this.context.clearRect(0, 0, this.canvas.width(), this.canvas.height());
+			this.imageData = this.context.getImageData(0, 0, this.canvas.width(), this.canvas.height());
+			function updateFunc() {
+				var next, nextd, r, rgb, dx, nexte, end = i + Math.min(this.iterations, 1000);
+				for (/* NOP */;
+					i < end;
 					i++, previousX = x, x = next.x, y = next.y
 				) {
-					if (this.updateTimeout != myUpdateTimeout) {
+					if (!this.running) {
 						debug('Stopped');
-						break; // No longer the current render thread
+						return; // Aborted
 					}
 					// Draw the corresponding pixel if it's in the imageData
 					if (x >= left && x < right && y >= top && y < bottom) {
-						var r = this.yToRow(y), c = this.xToCol(x);
-						var rgb = colourFunc(i, r, c, previousX);
+						r = this.yToRow(y), c = this.xToCol(x);
+						rgb = colourFunc(i, r, c, previousX);
 						setPixel(this.imageData, c, r, rgb[0], rgb[1], rgb[2], 255);
 					}
 					// Detect infinite attractors
 					if (x < xmin || x > xmax || y < ymin || y > ymax) {
+						// TODO: User-visible messaging
 						debug('Infinite attractor detected after ' + i + ' iterations');
-						break;
+						return;
 					}
 					// Iterate the point
-					var next = sys.iterate.call(sys, x, y, params);
+					next = sys.iterate.call(sys, x, y, params);
 					if (isNaN(next.x) || isNaN(next.y)) {
+						// TODO: User-visible messaging
 						debug("IterFunc args were ", x, y, params);
 						throw "Iteration function returned NaN";
 					}
-					var dx = Math.abs(x - next.x), dy = Math.abs(y - next.y);
+					dx = Math.abs(x - next.x), dy = Math.abs(y - next.y);
 					// Detect point attractors
 					if (dx < eta && dy < eta && i > minIterations) {
+						// TODO: User-visible messaging
 						debug('Point attractor detected after ' + i + ' iterations');
 						break;
 					}
 					// Iterate the partner, originally 'close' point
-					var nexte = sys.iterate.call(sys, xe, ye, params);
+					nexte = sys.iterate.call(sys, xe, ye, params);
 					// Update running approximation of Lyapunov exponent if some way into iteration.
 					// Values at start are discarded so as to give time to reach an attractor.
 					// FIXME: I doubt that the following calculations are correct.
@@ -380,7 +379,7 @@
 						// Calculate current distance between main point and partner point
 						nextdx = next.x - nexte.x;
 						nextdy = next.y - nexte.y;
-						var nextd = Math.sqrt(nextdx * nextdx + nextdy * nextdy);
+						nextd = Math.sqrt(nextdx * nextdx + nextdy * nextdy);
 						if (isNaN(this.lyapunov)) {
 							throw "NaN lyapunov exponent 1";
 						}
@@ -404,10 +403,16 @@
 					}
 				}
 				this.context.putImageData(this.imageData, 0, 0);
+				if (i < this.iterations) {
+					setZeroTimeout(function() {
+						updateFunc.call(that);
+					});
+				} else {
+					this.running = false;
+				}
 			}
-			var that = this;
-			this.updateTimeout = setTimeout(function() {
-				updateFunc.call(that, that.updateTimeout);
+			setZeroTimeout(function() {
+				updateFunc.call(that);
 			});
 		},
 		getLyapunovExponent: function() {
