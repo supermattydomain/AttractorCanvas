@@ -21,13 +21,6 @@
 			'(' + text + ')'
 		);
 	}
-	function setPixel(imageData, x, y, r, g, b, a) {
-		var i = (y * imageData.width * 4) + (x * 4);
-		imageData.data[i + 0] = r;
-		imageData.data[i + 1] = g;
-		imageData.data[i + 2] = b;
-		imageData.data[i + 3] = a;
-	}
 	function Attractor(canvas) {
 		this.canvas = canvas;
 		this.context = this.canvas[0].getContext("2d");
@@ -41,7 +34,7 @@
 		this.colourModeIndex = 0;
 		// Append a custom parameter set to each system, initially identical to the last existing one
 		$(this.systems).each(function(i, system) {
-			var clone = jQuery.extend(true, {}, system.parameterSets[system.parameterSets.length - 1]);
+			var clone = $.extend(true, {}, system.parameterSets[system.parameterSets.length - 1]);
 			system.parameterSets.push(clone);
 		});
 	}
@@ -54,21 +47,27 @@
 		 */
 		colourModes: [
 		              {
+		            	  name: 'Prev X co-ord',
+		            	  getColour: function(i, r, c, previousX) {
+		            		  return hsv2rgb(360 * previousX, 1, 1);
+		            	  }
+		              },
+		              {
 		            	  name: 'Black',
-		            	  getColour: function(i, r, c) {
+		            	  getColour: function(i, r, c, previousX) {
 		            		  return [ 0, 0, 0 ];
 		            	  }
 		              },
 		              {
 		               	  name: 'Sine',
-		               	  getColour: function(i, r, c) {
+		               	  getColour: function(i, r, c, previousX) {
 		               		  var r = Math.sin(i), g = Math.cos(i), b = -Math.sin(i);
 		               		  return [ 127 * (r + 1), 127 * (g + 1), 127 * (b + 1) ];
 		               	  }
 		              },
 		              {
 		               	  name: 'Alternating',
-		               	  getColour: function(i, r, c) {
+		               	  getColour: function(i, r, c, previousX) {
 		               		  return (i % 2) ? [ 255, 0, 0 ] : [ 0, 0, 255 ];
 		               	  }
 		              }
@@ -103,7 +102,7 @@
 				]
 			},
 			/**
-			 * x' = a0 + a1 x + a2 x^2 + a3 xy + a4 y^2 + a5 y
+			 * x' = a0 + a1 x + a2 x^2 + a3 xy + a4  y^2 + a5  y
 			 * y' = a6 + a7 x + a8 x^2 + a9 xy + a10 y^2 + a11 y
 			 */
 			{
@@ -112,13 +111,12 @@
 				initialZoom: 100,
 				iterate: function(x, y, params) {
 					return {
-						// FIXME: Sort this!
 						x: params.a0 + params.a1 * x + params.a2 * x * x + params.a3 * x * y + params.a4 * y + params.a5 * y * y,
 						y: params.b0 + params.b1 * x + params.b2 * x * x + params.b3 * x * y + params.b4 * y + params.b5 * y * y
 					};
 				},
 				parameterSets: [
-				    // TODO: Correct parameters for quadratic map
+				    // FIXME: Correct parameters for quadratic map
 				    {
 				    	a0: 0, a1: 0, a2: 0, a3: 0, a4: 1, a5: 0,
 				    	b0: 0, b1: 0.7, b2: -0.7, b3: 0, b4: 0, b5: 0
@@ -157,6 +155,42 @@
 				]
 			},
 			{
+				name: 'Gingerbread man',
+				initialValues: { x: -0.1, y: 0 },
+				initialZoom: 30,
+				iterate: function(x, y, params) {
+					return {
+						x: 1 - y + Math.abs(x),
+						y: x
+					};
+				},
+				parameterSets: [
+					{},
+				]
+			},
+			{
+				name: 'Tinkerbell map',
+				initialValues: { x: -0.72, y: -0.64 },
+				initialZoom: 100,
+				iterate: function(x, y, params) {
+					return {
+						x: x * x - y * y + params.a * x + params.b * y,
+						y: 2 * x * y + params.c * x + params.d * y
+					};
+				},
+				parameterSets: [
+					{ a: 0.9, b: -0.6013, c: 2, d: 0.50 }
+					/**
+					 * FIXME: Boring parameters.
+					 * This Wikipedia entry:
+					 * http://en.wikipedia.org/wiki/Tinkerbell_map
+					 * lists the following parameters, but they just generate
+					 * an infinite attractor, so are pretty boring.
+					 */
+					// { a: 0.3, b:  0.6000, c: 2, d: 0.27 }
+				]
+			},
+			{
 				name: 'Custom',
 				initialValues: { x: 0, y: 0 },
 				initialZoom: 30,
@@ -167,7 +201,7 @@
 					};
 				},
 				parameterSets: [
-				                // TODO: Custom parameter set
+				    // TODO: Custom parameter set
 					{},
 				]
 			}
@@ -246,11 +280,11 @@
 			system.parameterSets[system.parameterSets.length - 1] = parameterSet;
 		},
 		colToX: function(c) {
-			return (c - this.imageData.width  / 2) /  this.zoom + this.centreX;
+			return (c + 0.5 - this.imageData.width  / 2) /  this.zoom + this.centreX;
 		},
 		rowToY: function(r) {
 			// Inversion due to the canvas' inverted-Y co-ordinate system.
-			return (r - this.imageData.height / 2) / -this.zoom + this.centreY;
+			return (r - 0.5 - this.imageData.height / 2) / -this.zoom + this.centreY;
 		},
 		xToCol: function(x) {
 			return Math.round((x - this.centreX) *  this.zoom + this.imageData.width  / 2);
@@ -295,7 +329,9 @@
 					right = this.colToX(this.canvas.width()),
 					// These two are again inverted because of the Canvas' inverted Y co-ordinates
 					top = this.rowToY(this.canvas.height()),
-					bottom = this.rowToY(0);
+					bottom = this.rowToY(0),
+					// Previous X co-ordinate, for colouring
+					previousX = 0;
 				// Running total of Lyapunov exponent
 				this.lyapunov = 0;
 				if (0 == eta) {
@@ -305,7 +341,7 @@
 				for (
 					i = 0;
 					i < this.iterations;
-					i++, x = next.x, y = next.y
+					i++, previousX = x, x = next.x, y = next.y
 				) {
 					if (this.updateTimeout != myUpdateTimeout) {
 						debug('Stopped');
@@ -314,7 +350,7 @@
 					// Draw the corresponding pixel if it's in the imageData
 					if (x >= left && x < right && y >= top && y < bottom) {
 						var r = this.yToRow(y), c = this.xToCol(x);
-						var rgb = colourFunc(i, r, c);
+						var rgb = colourFunc(i, r, c, previousX);
 						setPixel(this.imageData, c, r, rgb[0], rgb[1], rgb[2], 255);
 					}
 					// Detect infinite attractors
