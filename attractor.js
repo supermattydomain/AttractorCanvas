@@ -53,13 +53,6 @@ $.extend(Attractor.prototype, {
 			}
 		},
 		{
-			name: 'Sine',
-			getColour: function(i, r, c, previousX) {
-				var r = Math.sin(i), g = Math.cos(i), b = -Math.sin(i);
-				return [ 127 * (r + 1), 127 * (g + 1), 127 * (b + 1) ];
-			}
-		},
-		{
 			name: 'Alternating',
 			getColour: function(i, r, c, previousX) {
 				return (i % 2) ? [ 255, 0, 0 ] : [ 0, 0, 255 ];
@@ -93,28 +86,6 @@ $.extend(Attractor.prototype, {
 				// http://www.a-matters.info/Geometry/Complex-System/peter-de-jong-attractor.html
 				{ a: -0.5206013, b: -2.083939, c: 0.7189889, d: -2.40354 },
 				{ a: -2.830518, b: 1.967394, c: 1.700244, d: 1.746933 }
-			]
-		},
-		/**
-		 * x' = a0 + a1 x + a2 x^2 + a3 xy + a4  y^2 + a5  y
-		 * y' = a6 + a7 x + a8 x^2 + a9 xy + a10 y^2 + a11 y
-		 */
-		{
-			name: 'Quadratic map',
-			initialValues: { x: 0.5, y: 0.5 },
-			initialZoom: 100,
-			iterate: function(x, y, params) {
-				return {
-					x: params.a0 + params.a1 * x + params.a2 * x * x + params.a3 * x * y + params.a4 * y + params.a5 * y * y,
-					y: params.b0 + params.b1 * x + params.b2 * x * x + params.b3 * x * y + params.b4 * y + params.b5 * y * y
-				};
-			},
-			parameterSets: [
-			    // FIXME: Correct parameters for quadratic map
-			    {
-			    	a0: 0, a1: 0, a2: 0, a3: 0, a4: 1, a5: 0,
-			    	b0: 0, b1: 0.7, b2: -0.7, b3: 0, b4: 0, b5: 0
-			    }
 			]
 		},
 		{
@@ -165,7 +136,7 @@ $.extend(Attractor.prototype, {
 		{
 			name: 'Tinkerbell map',
 			initialValues: { x: -0.72, y: -0.64 },
-			initialZoom: 100,
+			initialZoom: 120,
 			iterate: function(x, y, params) {
 				return {
 					x: x * x - y * y + params.a * x + params.b * y,
@@ -182,6 +153,51 @@ $.extend(Attractor.prototype, {
 				 * an infinite attractor, so are pretty boring.
 				 */
 				// { a: 0.3, b:  0.6000, c: 2, d: 0.27 }
+			]
+		},
+		/**
+		 * For a detailed discussion of dynamic structure see:
+		 * http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.54.9701&rep=rep1&type=pdf
+		 * For some numerical investigations of attractors see:
+		 * http://faculty.uaeu.ac.ae/hakca/papers/djellit-i.pdf
+		 */
+		{
+			name: 'Bogdanov map',
+			initialValues: { x: 0.1, y: 0.1 },
+			initialZoom: 100,
+			iterate: function(x, y, params) {
+				var nexty = (1 + params.eta) * y + params.h * x * (x - 1) + params.mu * x * y;
+				return {
+					x: x + nexty,
+					y: nexty
+				};
+			},
+			parameterSets: [
+				{ eta: 0.15, mu: -1.7, h: 0.3 },
+				{ eta: 0, mu: 2, h: 1.44 },
+				{ eta: 0.001, mu: -0.1, h: 1.44 }
+			]
+		},
+		/**
+		 * x' = a0 + a1 x + a2 x^2 + a3 xy + a4  y^2 + a5  y
+		 * y' = a6 + a7 x + a8 x^2 + a9 xy + a10 y^2 + a11 y
+		 */
+		{
+			name: 'Quadratic map',
+			initialValues: { x: 0.5, y: 0.5 },
+			initialZoom: 100,
+			iterate: function(x, y, params) {
+				return {
+					x: params.a0 + params.a1 * x + params.a2 * x * x + params.a3 * x * y + params.a4 * y + params.a5 * y * y,
+					y: params.b0 + params.b1 * x + params.b2 * x * x + params.b3 * x * y + params.b4 * y + params.b5 * y * y
+				};
+			},
+			parameterSets: [
+			    // TODO: Interesting parameters for quadratic map (which these are not)
+			    {
+			    	a0: 0, a1: 0, a2: 0, a3: 0, a4: 1, a5: 0,
+			    	b0: 0, b1: 0.7, b2: -0.7, b3: 0, b4: 0, b5: 0
+			    }
 			]
 		},
 		{
@@ -296,6 +312,7 @@ $.extend(Attractor.prototype, {
 		return this;
 	},
 	update: function() {
+		// NOTE: Eclipse incorrectly warns: "The local variable [foo] is never read"
 		var i = 0, that = this,
 			minIterations = 50,
 			sys = this.getSystem(),
@@ -337,9 +354,26 @@ $.extend(Attractor.prototype, {
 					debug('Stopped');
 					return; // Aborted
 				}
-				// Draw the corresponding pixel if it's in the imageData
+				// Draw the corresponding pixel if it's visible onscreen
 				if (x >= left && x < right && y >= top && y < bottom) {
 					r = this.yToRow(y), c = this.xToCol(x);
+					if (false) {
+						rgb = getPixel(this.imageData, c, r);
+						if (rgb[3]) {
+							/**
+							 * TODO: Detect cycles and halt rendering.
+							 * Need somehow to distinguish between (x, y) true cycles and
+							 * (row, column) pseudo-cycles.
+							 * 
+							 * We've aready drawn this pixel in some non-transparent colour.
+							 * These attractors do have cycles, but we have not necessarily found one of them now.
+							 * It's possible that loss of numeric precision and/or the consequent
+							 * cumulative error when iterating have caused two close but distinct points
+							 * on the Argand plane to be mapped to the same pixel location on the canvas.
+							 */
+							return; // Cycle detected
+						}
+					}
 					rgb = colourFunc(i, r, c, previousX);
 					setPixel(this.imageData, c, r, rgb[0], rgb[1], rgb[2], 255);
 				}
@@ -350,7 +384,7 @@ $.extend(Attractor.prototype, {
 					return;
 				}
 				// Iterate the point
-				next = sys.iterate.call(sys, x, y, params);
+				next = sys.iterate(x, y, params);
 				if (isNaN(next.x) || isNaN(next.y)) {
 					// TODO: User-visible messaging
 					debug("IterFunc args were ", x, y, params);
@@ -361,7 +395,7 @@ $.extend(Attractor.prototype, {
 				if (dx < eta && dy < eta && i > minIterations) {
 					// TODO: User-visible messaging
 					debug('Point attractor detected after ' + i + ' iterations');
-					break;
+					return;
 				}
 				// Iterate the partner, originally 'close' point
 				nexte = sys.iterate.call(sys, xe, ye, params);
@@ -397,12 +431,10 @@ $.extend(Attractor.prototype, {
 				}
 			}
 			this.context.putImageData(this.imageData, 0, 0);
-			if (i < this.iterations) {
+			if (this.running && i < this.iterations) {
 				setZeroTimeout(function() {
 					updateFunc.call(that);
 				});
-			} else {
-				this.running = false;
 			}
 		}
 		setZeroTimeout(function() {
