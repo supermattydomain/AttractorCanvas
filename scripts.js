@@ -22,11 +22,11 @@ function compileExpr(text) {
 			buttonZoomIn = $('#zoomIn'),
 			buttonZoomOut = $('#zoomOut'),
 			buttonStop = $('#stop'),
-			attractor = new Attractor(canvas),
+			attractor = new AttractorCanvas.Attractor(canvas),
 			resizable = $('#resizable'),
 			renderProgress = $('#renderProgress');
 		function populateSystems() {
-			$(Attractor.prototype.systems).each(function(i, system) {
+			$(AttractorCanvas.Attractor.prototype.systems).each(function(i, system) {
 				var option = $(document.createElement('option'));
 				option.text(system.name);
 				option.val(i);
@@ -35,7 +35,7 @@ function compileExpr(text) {
 		}
 		function populateParameterSets(systemIndex) {
 			selectParameterSet.empty();
-			$(Attractor.prototype.systems[systemIndex].parameterSets).each(function(i, parameterSet) {
+			$(AttractorCanvas.Attractor.prototype.systems[systemIndex].parameterSets).each(function(i, parameterSet) {
 				var option = $(document.createElement('option'));
 				option.text(JSON.stringify(parameterSet));
 				option.val(i);
@@ -45,7 +45,7 @@ function compileExpr(text) {
 			selectParameterSet.find('option:last-child').text('Custom');
 		}
 		function populateColourModes() {
-			$(Attractor.prototype.colourModes).each(function(i, colourMode) {
+			$(AttractorCanvas.Attractor.prototype.colourModes).each(function(i, colourMode) {
 				var option = $(document.createElement('option'));
 				option.text(colourMode.name);
 				option.val(i);

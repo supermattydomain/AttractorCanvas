@@ -15,7 +15,11 @@
  * 
  */
 
-function Attractor(canvas) {
+if (typeof(AttractorCanvas) === "undefined") {
+	AttractorCanvas = {};
+}
+
+AttractorCanvas.Attractor = function(canvas) {
 	this.canvas = canvas;
 	this.context = this.canvas[0].getContext("2d");
 	this.imageData = this.context.getImageData(0, 0, this.canvas.width(), this.canvas.height());
@@ -31,8 +35,8 @@ function Attractor(canvas) {
 		var clone = $.extend(true, {}, system.parameterSets[system.parameterSets.length - 1]);
 		system.parameterSets.push(clone);
 	});
-}
-$.extend(Attractor.prototype, {
+};
+$.extend(AttractorCanvas.Attractor.prototype, {
 	/**
 	 * Methods of colouring the points.
 	 * These exist mostly to show that they don't work well!
@@ -458,4 +462,4 @@ $.extend(Attractor.prototype, {
 		return this.lyapunov;
 	}
 });
-Attractor.prototype.zoomInBy = Attractor.prototype.zoomBy;
+AttractorCanvas.Attractor.prototype.zoomInBy = AttractorCanvas.Attractor.prototype.zoomBy;
