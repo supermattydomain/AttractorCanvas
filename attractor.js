@@ -21,7 +21,7 @@ function Attractor(canvas) {
 	this.imageData = this.context.getImageData(0, 0, this.canvas.width(), this.canvas.height());
 	this.centreX = 0;
 	this.centreY = 0;
-	this.iterations = 100000;
+	this.iterations = 50000;
 	this.zoom = Math.min(this.imageData.width, this.imageData.height) / 4;
 	this.currentSystem = 0;
 	this.currentParameterSet = 0;
@@ -179,17 +179,17 @@ $.extend(Attractor.prototype, {
 			]
 		},
 		/**
-		 * x' = a0 + a1 x + a2 x^2 + a3 xy + a4  y^2 + a5  y
-		 * y' = a6 + a7 x + a8 x^2 + a9 xy + a10 y^2 + a11 y
+		 * x' = a1 + a2 x + a3 x^2 +  a4 xy +  a5 y +  a6 y^2
+		 * y' = a7 + a8 x + a9 x^2 + a10 xy + a11 y + a12 y^2
 		 */
 		{
 			name: 'Quadratic map',
-			initialValues: { x: 0.5, y: 0.5 },
+			initialValues: { x: 0.1, y: 0.1 },
 			initialZoom: 100,
 			iterate: function(x, y, params) {
 				return {
-					x: params.a0 + params.a1 * x + params.a2 * x * x + params.a3 * x * y + params.a4 * y + params.a5 * y * y,
-					y: params.b0 + params.b1 * x + params.b2 * x * x + params.b3 * x * y + params.b4 * y + params.b5 * y * y
+					x: params.a1 + params.a2 * x + params.a3 * x * x + params.a4 * x * y + params.a5 * y + params.a6 * y * y,
+					y: params.a7 + params.a8 * x + params.a9 * x * x + params.a10 * x * y + params.a11 * y + params.a12 * y * y
 				};
 			},
 			parameterSets: [
@@ -445,12 +445,12 @@ $.extend(Attractor.prototype, {
 			}
 			this.context.putImageData(this.imageData, 0, 0);
 			if (this.running && i < this.iterations) {
-				setZeroTimeout(function() {
+				setImmediate(function() {
 					updateFunc.call(that);
 				});
 			}
 		}
-		setZeroTimeout(function() {
+		setImmediate(function() {
 			updateFunc.call(that);
 		});
 	},

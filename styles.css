@@ -3,3 +3,16 @@
 #canvas {
 	border: 1px solid black;
 }
+
+#resizable {
+       float: left; /* trigger shrinkwrap */
+       padding: 10px;
+}
+
+button {
+       margin: 5px;
+}
+
+#renderProgress {
+       height: 1em;
+}

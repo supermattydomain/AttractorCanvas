@@ -7,22 +7,24 @@ function compileExpr(text) {
 (function($) {
 	$(function() {
 		var canvas = $('#canvas');
-		var displayLyapunovExponent = $('#lyapunovExponent');
-		var displayMouseX = $('#mousex');
-		var displayMouseY = $('#mousey');
-		var editCentreX = $('#centrex');
-		var editCentreY = $('#centrey');
-		var editZoomLevel = $('#zoomFactor');
-		var editMaxIterations = $('#iterationsMax');
-		var selectSystem = $('#system');
-		var selectParameterSet = $('#selectParameterSet');
-		var parameterSetDetails = $('#parameterSetDetails');
-		var selectColourMode = $('#selectColourMode');
-		var iterFuncDetails = $('#iterFuncDetails');
-		var buttonZoomIn = $('#zoomIn');
-		var buttonZoomOut = $('#zoomOut');
-		var buttonStop = $('#stop');
-		var attractor = new Attractor(canvas);
+			displayLyapunovExponent = $('#lyapunovExponent'),
+			displayMouseX = $('#mousex'),
+			displayMouseY = $('#mousey'),
+			editCentreX = $('#centrex'),
+			editCentreY = $('#centrey'),
+			editZoomLevel = $('#zoomFactor'),
+			editMaxIterations = $('#iterationsMax'),
+			selectSystem = $('#system'),
+			selectParameterSet = $('#selectParameterSet'),
+			parameterSetDetails = $('#parameterSetDetails'),
+			selectColourMode = $('#selectColourMode'),
+			iterFuncDetails = $('#iterFuncDetails'),
+			buttonZoomIn = $('#zoomIn'),
+			buttonZoomOut = $('#zoomOut'),
+			buttonStop = $('#stop'),
+			attractor = new Attractor(canvas),
+			resizable = $('#resizable'),
+			renderProgress = $('#renderProgress');
 		function populateSystems() {
 			$(Attractor.prototype.systems).each(function(i, system) {
 				var option = $(document.createElement('option'));
@@ -153,6 +155,7 @@ function compileExpr(text) {
 		buttonStop.on('click', function() {
 			attractor.stop();
 		});
+		// resizable.resizable({ handles: "all", animate: false, ghost: true, autohide: false });
 		populateSystems();
 		populateParameterSets(0);
 		populateColourModes();

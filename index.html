@@ -4,11 +4,17 @@
 <meta charset="UTF-8">
 <title>Attractor Canvas</title>
 <link rel="stylesheet" href="styles.css" type="text/css" media="screen" />
+<link rel="stylesheet" type="text/css" href="../lib/jquery-ui/themes/base/jquery.ui.all.css" />
 <script type="text/javascript" src="../lib/jquery/dist/jquery.js"></script>
+<script type="text/javascript" src="../lib/jquery-ui/ui/jquery.ui.core.js"></script>
+<script type="text/javascript" src="../lib/jquery-ui/ui/jquery.ui.widget.js"></script>
+<script type="text/javascript" src="../lib/jquery-ui/ui/jquery.ui.mouse.js"></script>
+<script type="text/javascript" src="../lib/jquery-ui/ui/jquery.ui.resizable.js"></script>
+<script type="text/javascript" src="../lib/jquery-ui/ui/jquery.ui.progressbar.js"></script>
 <script type="text/javascript" src="../lib/jsdebug/debug.js"></script>
 <script type="text/javascript" src="../lib/js-lib/colours.js"></script>
 <script type="text/javascript" src="../lib/js-lib/canvas.js"></script>
-<script type="text/javascript" src="../lib/js-lib/setZeroTimeout.js"></script>
+<script type="text/javascript" src="../lib/js-lib/setImmediate.js"></script>
 <script type="text/javascript" src="attractor.js"></script>
 <script type="text/javascript" src="scripts.js"></script>
 </head>
@@ -18,7 +24,7 @@
 
 <p>Clicking on an area centres the view there and zooms in by a factor of two.</p>
 
-<div style="float: left">
+<div id="resizable">
 <canvas id="canvas" width="400" height="400"></canvas>
 </div>
 
@@ -36,10 +42,9 @@
 <tr><td>Parameter Set</td><td><select id="selectParameterSet"></select></td></tr>
 <tr><td>Parameter Values</td><td><textarea id="parameterSetDetails" readonly="readonly" rows="5" cols="40"></textarea></td></tr>
 <tr><td>Colour mode</td><td><select id="selectColourMode"></select></td></tr>
+<tr><td colspan="2"><button id="zoomIn">Zoom in</button><button id="zoomOut">Zoom out</button><button id="stop">Stop</button></td></tr>
+<tr><td colspan="2"><div id="renderProgress"></div></td></tr>
 </table>
-<button id="zoomIn">Zoom in</button>
-<button id="zoomOut">Zoom out</button>
-<button id="stop">Stop</button>
 </div>
 
 </body>
