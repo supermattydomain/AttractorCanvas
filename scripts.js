@@ -6,7 +6,8 @@ function compileExpr(text) {
 
 (function($) {
 	$(function() {
-		var canvas = $('#canvas');
+		var $canvas = $('#canvas');
+			canvas = $canvas[0],
 			displayLyapunovExponent = $('#lyapunovExponent'),
 			displayMouseX = $('#mousex'),
 			displayMouseY = $('#mousey'),
@@ -22,7 +23,7 @@ function compileExpr(text) {
 			buttonZoomIn = $('#zoomIn'),
 			buttonZoomOut = $('#zoomOut'),
 			buttonStop = $('#stop'),
-			attractor = new AttractorCanvas.Attractor(canvas),
+			attractor = new AttractorCanvas.Attractor($canvas),
 			resizable = $('#resizable'),
 			renderProgress = $('#renderProgress');
 		function populateSystems() {
@@ -59,7 +60,7 @@ function compileExpr(text) {
 			editMaxIterations.val(attractor.getIterations());
 			selectSystem.val(attractor.getSystemIndex());
 			selectParameterSet.val(attractor.getParameterSetIndex());
-			parameterSetDetails.val(JSON.stringify(attractor.getParameterSet(), null, '  '));
+			parameterSetDetails.val(JSON.stringify(attractor.getParameterSet(), null, ''));
 			selectColourMode.val(attractor.getColourModeIndex());
 			iterFuncDetails.val(attractor.getIterationFunction().toString());
 		}
@@ -68,11 +69,11 @@ function compileExpr(text) {
 			attractor.update();
 			displayLyapunovExponent.text(attractor.getLyapunovExponent());
 		}
-		canvas.on('mousemove', function(event) {
-			displayMouseX.text(attractor.colToX(event.pageX - canvas.position().left));
-			displayMouseY.text(attractor.rowToY(event.pageY - canvas.position().top));
+		$canvas.on('mousemove', function(event) {
+			displayMouseX.text(attractor.colToX(event.pageX - $canvas.position().left));
+			displayMouseY.text(attractor.rowToY(event.pageY - $canvas.position().top));
 		}).on('click', function(event) {
-			attractor.setCentre(attractor.colToX(event.pageX - canvas.position().left), attractor.rowToY(event.pageY - canvas.position().top));
+			attractor.setCentre(attractor.colToX(event.pageX - $canvas.position().left), attractor.rowToY(event.pageY - $canvas.position().top));
 			attractor.zoomInBy(2);
 			update();
 		});
@@ -156,6 +157,22 @@ function compileExpr(text) {
 			attractor.stop();
 		});
 		// resizable.resizable({ handles: "all", animate: false, ghost: true, autohide: false });
+		renderProgress.progressbar({value: 0, max: 100});
+		resizable.on('resizestop', function(event, ui) {
+			$canvas.css({ width: '100%', height: '100%' });
+			canvas.width = $canvas.width();
+			canvas.height = $canvas.height();
+			update();
+		});
+		$canvas.on(AttractorCanvas.eventNames.renderStart, function(event) {
+			renderProgress.progressbar('option', 'value', 0);
+			buttonStop.removeAttr('disabled');
+		}).on(AttractorCanvas.eventNames.renderStop, function(event) {
+			renderProgress.progressbar('option', 'value', 100);
+			buttonStop.attr('disabled', 'disabled');
+		}).on(AttractorCanvas.eventNames.renderProgress, function(event, proportionDone) {
+			renderProgress.progressbar('option', 'value', proportionDone * 100);
+		});
 		populateSystems();
 		populateParameterSets(0);
 		populateColourModes();

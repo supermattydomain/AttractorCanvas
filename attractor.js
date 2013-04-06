@@ -370,6 +370,7 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 			) {
 				if (!this.running) {
 					debug('Stopped');
+					this.$canvas.trigger(AttractorCanvas.eventNames.renderStop);
 					return; // Aborted
 				}
 				// Draw the corresponding pixel if it's visible onscreen
@@ -389,6 +390,8 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 							 * cumulative error when iterating have caused two close but distinct points
 							 * on the Argand plane to be mapped to the same pixel location on the canvas.
 							 */
+							this.running = false;
+							this.$canvas.trigger(AttractorCanvas.eventNames.renderStop);
 							return; // Cycle detected
 						}
 					}
@@ -399,6 +402,8 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 				if (x < xmin || x > xmax || y < ymin || y > ymax) {
 					// TODO: User-visible messaging
 					debug('Infinite attractor detected after ' + i + ' iterations');
+					this.running = false;
+					this.$canvas.trigger(AttractorCanvas.eventNames.renderStop);
 					return;
 				}
 				// Iterate the point
@@ -406,6 +411,8 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 				if (isNaN(next.x) || isNaN(next.y)) {
 					// TODO: User-visible messaging
 					debug("IterFunc args were ", x, y, params);
+					this.running = false;
+					this.$canvas.trigger(AttractorCanvas.eventNames.renderStop);
 					throw "Iteration function returned NaN";
 				}
 				dx = Math.abs(x - next.x), dy = Math.abs(y - next.y);
@@ -413,6 +420,8 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 				if (dx < eta && dy < eta && i > minIterations) {
 					// TODO: User-visible messaging
 					debug('Point attractor detected after ' + i + ' iterations');
+					this.running = false;
+					this.$canvas.trigger(AttractorCanvas.eventNames.renderStop);
 					return;
 				}
 				// Iterate the partner, originally 'close' point
@@ -427,11 +436,15 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 					nextdy = next.y - nexte.y;
 					nextd = Math.sqrt(nextdx * nextdx + nextdy * nextdy);
 					if (isNaN(this.lyapunov)) {
+						this.running = false;
+						this.$canvas.trigger(AttractorCanvas.eventNames.renderStop);
 						throw "NaN lyapunov exponent 1";
 					}
 					this.lyapunov += Math.log(nextd / d0);
 					if (isNaN(this.lyapunov)) {
 						debug(this.lyapunov, nextd, d0);
+						this.running = false;
+						this.$canvas.trigger(AttractorCanvas.eventNames.renderStop);
 						throw "NaN lyapunov exponent 2";
 					}
 					lyapunovNumIter++;
@@ -445,17 +458,23 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 				// which should be approximately equal to the greatest Lyapunov exponent.
 				this.lyapunov /= lyapunovNumIter;
 				if (isNaN(this.lyapunov)) {
+					this.running = false;
+					this.$canvas.trigger(AttractorCanvas.eventNames.renderStop);
 					throw "NaN lyapunov exponent 3";
 				}
 			}
 			this.context.putImageData(this.imageData, 0, 0);
 			if (this.running && i < this.iterations) {
+				this.$canvas.trigger(AttractorCanvas.eventNames.renderProgress, i / this.iterations);
 				setImmediate(function() {
 					updateFunc.call(that);
 				});
+			} else {
+				this.$canvas.trigger(AttractorCanvas.eventNames.renderStop);
 			}
 		}
 		setImmediate(function() {
+			that.$canvas.trigger(AttractorCanvas.eventNames.renderStart);
 			updateFunc.call(that);
 		});
 	},
@@ -464,3 +483,11 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 	}
 });
 AttractorCanvas.Attractor.prototype.zoomInBy = AttractorCanvas.Attractor.prototype.zoomBy;
+
+$.extend(AttractorCanvas, {
+       eventNames: {
+               renderStart: 'Attractor.renderStart',
+               renderStop:  'Attractor.renderStop',
+               renderProgress: 'Attractor.renderProgress'
+       }
+});
