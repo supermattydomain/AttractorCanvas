@@ -6,7 +6,7 @@ function compileExpr(text) {
 
 (function($) {
 	$(function() {
-		var $canvas = $('#canvas');
+		var $canvas = $('#canvas'),
 			canvas = $canvas[0],
 			displayLyapunovExponent = $('#lyapunovExponent'),
 			displayMouseX = $('#mousex'),
@@ -60,7 +60,7 @@ function compileExpr(text) {
 			editMaxIterations.val(attractor.getIterations());
 			selectSystem.val(attractor.getSystemIndex());
 			selectParameterSet.val(attractor.getParameterSetIndex());
-			parameterSetDetails.val(JSON.stringify(attractor.getParameterSet(), null, ''));
+			parameterSetDetails.val(JSON.stringify(attractor.getParameterSet(), null, ' '));
 			selectColourMode.val(attractor.getColourModeIndex());
 			iterFuncDetails.val(attractor.getIterationFunction().toString());
 		}
