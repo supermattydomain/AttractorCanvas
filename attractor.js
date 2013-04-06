@@ -20,9 +20,10 @@ if (typeof(AttractorCanvas) === "undefined") {
 }
 
 AttractorCanvas.Attractor = function(canvas) {
-	this.canvas = canvas;
-	this.context = this.canvas[0].getContext("2d");
-	this.imageData = this.context.getImageData(0, 0, this.canvas.width(), this.canvas.height());
+	this.$canvas = canvas;
+	this.canvas = canvas[0];
+	this.context = this.canvas.getContext("2d");
+	this.imageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
 	this.centreX = 0;
 	this.centreY = 0;
 	this.iterations = 50000;
@@ -349,9 +350,9 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 			xmax = Math.pow(2, 32), xmin = -xmax, ymax = xmax, ymin = xmin,
 			// Boundaries of drawing area in logical (x,y) co-ordinates
 			left = this.colToX(0),
-			right = this.colToX(this.canvas.width()),
+			right = this.colToX(this.canvas.width),
 			// These two are again inverted because of the Canvas' inverted Y co-ordinates
-			top = this.rowToY(this.canvas.height()),
+			top = this.rowToY(this.canvas.height),
 			bottom = this.rowToY(0),
 			// Previous X co-ordinate, for colouring
 			previousX = 0;
@@ -359,8 +360,8 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 		this.lyapunov = 0;
 		this.stop();
 		this.running = true;
-		this.context.clearRect(0, 0, this.canvas.width(), this.canvas.height());
-		this.imageData = this.context.getImageData(0, 0, this.canvas.width(), this.canvas.height());
+		this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+		this.imageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
 		function updateFunc() {
 			var next, nextd, r, rgb, dx, nexte, end = i + Math.min(this.iterations, 1000);
 			for (/* NOP */;
