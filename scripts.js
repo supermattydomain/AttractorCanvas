@@ -70,10 +70,10 @@ function compileExpr(text) {
 			displayLyapunovExponent.text(attractor.getLyapunovExponent());
 		}
 		$canvas.on('mousemove', function(event) {
-			displayMouseX.text(attractor.colToX(event.pageX - $canvas.position().left));
-			displayMouseY.text(attractor.rowToY(event.pageY - $canvas.position().top));
+			displayMouseX.text(attractor.colToX(event.pageX - $canvas.offset().left));
+			displayMouseY.text(attractor.rowToY(event.pageY - $canvas.offset().top));
 		}).on('click', function(event) {
-			attractor.setCentre(attractor.colToX(event.pageX - $canvas.position().left), attractor.rowToY(event.pageY - $canvas.position().top));
+			attractor.setCentre(attractor.colToX(event.pageX - $canvas.offset().left), attractor.rowToY(event.pageY - $canvas.offset().top));
 			attractor.zoomInBy(2);
 			update();
 		});
@@ -156,7 +156,7 @@ function compileExpr(text) {
 		buttonStop.on('click', function() {
 			attractor.stop();
 		});
-		// resizable.resizable({ handles: "all", animate: false, ghost: true, autohide: false });
+		resizable.resizable({ handles: "all", animate: false, ghost: true, autohide: false });
 		renderProgress.progressbar({value: 0, max: 100});
 		resizable.on('resizestop', function(event, ui) {
 			$canvas.css({ width: '100%', height: '100%' });
