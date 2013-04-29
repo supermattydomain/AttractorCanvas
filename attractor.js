@@ -19,6 +19,11 @@ if (typeof(AttractorCanvas) === "undefined") {
 	AttractorCanvas = {};
 }
 
+/**
+ * An HTML5 Canvas that displays a strange attractor.
+ * @param canvas jQuery wrapper around the HTML5 Canvas to draw into.
+ * @returns {AttractorCanvas.Attractor} The new instance
+ */
 AttractorCanvas.Attractor = function(canvas) {
 	this.$canvas = canvas;
 	this.canvas = canvas[0];
@@ -40,9 +45,6 @@ AttractorCanvas.Attractor = function(canvas) {
 $.extend(AttractorCanvas.Attractor.prototype, {
 	/**
 	 * Methods of colouring the points.
-	 * These exist mostly to show that they don't work well!
-	 * There is no simple relationship between iteration count
-	 * and location of point for a chaotic attractor.
 	 */
 	colourModes: [
 		{
@@ -57,6 +59,11 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 				return [ 0, 0, 0 ];
 			}
 		},
+		/**
+		 * This one is included mostly to show that it doesn't work well!
+		 * There is no simple relationship between iteration count
+		 * and location of point for a chaotic attractor.
+		 */
 		{
 			name: 'Alternating',
 			getColour: function(i, r, c, previousX) {
@@ -198,24 +205,24 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 				};
 			},
 			parameterSets: [
-								// Following parameters from Wolfram Mathworld:
-								// http://mathworld.wolfram.com/StrangeAttractor.html
-								{ a1: -1.2, a2: 0, a3: 0.7, a4: 0, a5: 0.1, a6: 0.4, a7: 0.4, a8: 1.1, a9: 0.8, a10: 1.2, a11: -0.6, a12: -1.2 },
-								{ a1: -1, a2: 0.9, a3: 0.4, a4: -0.2, a5: -0.6, a6: -0.5, a7: 0.4, a8: 0.7, a9: 0.3, a10: -0.5, a11: 0.7, a12: -0.8 },
-								{ a1: -0.7, a2: -0.4, a3: 0.5, a4: -1, a5: -0.9, a6: -0.8, a7: 0.5, a8: 0.5, a9: 0.3, a10: 0.9, a11: -0.1, a12: -0.9 },
-								{ a1: -0.6, a2: -0.4, a3: -0.4, a4: -0.8, a5: 0.7, a6: 0.3, a7: -0.4, a8: 0.4, a9: 0.5, a10: 0.5, a11: 0.8, a12: -0.1 },
-								{ a1: -0.6, a2: -0.1, a3: 1.1, a4: 0.2, a5: -0.8, a6: 0.6, a7: -0.7, a8: 0.7, a9: 0.7, a10: 0.3, a11: 0.6, a12: 0.9 },
-								{ a1: -0.6, a2: 1.1, a3: 0.4, a4: 0.6, a5: 0.1, a6: 0.6, a7: -0.2, a8: -0.8, a9: -0.8, a10: -1, a11: 0.7, a12: 1.1 },
-								{ a1: -0.5, a2: -0.6, a3: 0.8, a4: -0.5, a5: -0.9, a6: 0.3, a7: -0.5, a8: 0.1, a9: 0.6, a10: -0.6, a11: 0.2, a12: -0.5 },
-								{ a1: -0.4, a2: -0.1, a3: -0.4, a4: -1.1, a5: 0.9, a6: 0.3, a7: -0.2, a8: -0.3, a9: 1, a10: -0.6, a11: 0.5, a12: 0.5 },
-								{ a1: -0.1, a2: 0.8, a3: -0.7, a4: -1.1, a5: -1.1, a6: -0.7, a7: -0.4, a8: 0.6, a9: -0.6, a10: -0.3, a11: 1.2, a12: 0.6 },
-								{ a1: 0, a2: -1, a3: 0.5, a4: -1.1, a5: -0.4, a6: 0.3, a7: 0.2, a8: 0.3, a9: -0.5, a10: 0.7, a11: -1.1, a12: 0.1 },
-								{ a1: 0, a2: -0.9, a3: 0.9, a4: -1.2, a5: -0.4, a6: -0.9, a7: 0.2, a8: 1.2, a9: -0.5, a10: 1.2, a11: -0.8, a12: -1.2 },
-								{ a1: 0.2, a2: -0.9, a3: -0.6, a4: 0.4, a5: -1, a6: 0.1, a7: 1.1, a8: 0.2, a9: -0.9, a10: 0.1, a11: 1.2, a12: -1.2 },
-								{ a1: 0.4, a2: -0.7, a3: -0.7, a4: 0.9, a5: 0.6, a6: -0.1, a7: 0, a8: -0.3, a9: -0.3, a10: -0.6, a11: -1, a12: 0.5 },
-								{ a1: 0.8, a2: 1, a3: -1.2, a4: -1, a5: 1.1, a6: -0.9, a7: 0.4, a8: -0.4, a9: -0.6, a10: -0.2, a11: -0.5, a12: -0.7 },
-								{ a1: 0.9, a2: -1.1, a3: 1, a4: 0.1, a5: -1.1, a6: -0.9, a7: -0.8, a8: -0.1, a9: 1.2, a10: -0.5, a11: 0.8, a12: -0.1 },
-								{ a1: 1, a2: 0.1, a3: -1, a4: 0.6, a5: -0.1, a6: -0.7, a7: -0.1, a8: -0.6, a9: -0.4, a10: -0.5, a11: -0.6, a12: -0.1 }
+				// Following parameters from Wolfram Mathworld:
+				// http://mathworld.wolfram.com/StrangeAttractor.html
+				{ a1: -1.2, a2: 0, a3: 0.7, a4: 0, a5: 0.1, a6: 0.4, a7: 0.4, a8: 1.1, a9: 0.8, a10: 1.2, a11: -0.6, a12: -1.2 },
+				{ a1: -1, a2: 0.9, a3: 0.4, a4: -0.2, a5: -0.6, a6: -0.5, a7: 0.4, a8: 0.7, a9: 0.3, a10: -0.5, a11: 0.7, a12: -0.8 },
+				{ a1: -0.7, a2: -0.4, a3: 0.5, a4: -1, a5: -0.9, a6: -0.8, a7: 0.5, a8: 0.5, a9: 0.3, a10: 0.9, a11: -0.1, a12: -0.9 },
+				{ a1: -0.6, a2: -0.4, a3: -0.4, a4: -0.8, a5: 0.7, a6: 0.3, a7: -0.4, a8: 0.4, a9: 0.5, a10: 0.5, a11: 0.8, a12: -0.1 },
+				{ a1: -0.6, a2: -0.1, a3: 1.1, a4: 0.2, a5: -0.8, a6: 0.6, a7: -0.7, a8: 0.7, a9: 0.7, a10: 0.3, a11: 0.6, a12: 0.9 },
+				{ a1: -0.6, a2: 1.1, a3: 0.4, a4: 0.6, a5: 0.1, a6: 0.6, a7: -0.2, a8: -0.8, a9: -0.8, a10: -1, a11: 0.7, a12: 1.1 },
+				{ a1: -0.5, a2: -0.6, a3: 0.8, a4: -0.5, a5: -0.9, a6: 0.3, a7: -0.5, a8: 0.1, a9: 0.6, a10: -0.6, a11: 0.2, a12: -0.5 },
+				{ a1: -0.4, a2: -0.1, a3: -0.4, a4: -1.1, a5: 0.9, a6: 0.3, a7: -0.2, a8: -0.3, a9: 1, a10: -0.6, a11: 0.5, a12: 0.5 },
+				{ a1: -0.1, a2: 0.8, a3: -0.7, a4: -1.1, a5: -1.1, a6: -0.7, a7: -0.4, a8: 0.6, a9: -0.6, a10: -0.3, a11: 1.2, a12: 0.6 },
+				{ a1: 0, a2: -1, a3: 0.5, a4: -1.1, a5: -0.4, a6: 0.3, a7: 0.2, a8: 0.3, a9: -0.5, a10: 0.7, a11: -1.1, a12: 0.1 },
+				{ a1: 0, a2: -0.9, a3: 0.9, a4: -1.2, a5: -0.4, a6: -0.9, a7: 0.2, a8: 1.2, a9: -0.5, a10: 1.2, a11: -0.8, a12: -1.2 },
+				{ a1: 0.2, a2: -0.9, a3: -0.6, a4: 0.4, a5: -1, a6: 0.1, a7: 1.1, a8: 0.2, a9: -0.9, a10: 0.1, a11: 1.2, a12: -1.2 },
+				{ a1: 0.4, a2: -0.7, a3: -0.7, a4: 0.9, a5: 0.6, a6: -0.1, a7: 0, a8: -0.3, a9: -0.3, a10: -0.6, a11: -1, a12: 0.5 },
+				{ a1: 0.8, a2: 1, a3: -1.2, a4: -1, a5: 1.1, a6: -0.9, a7: 0.4, a8: -0.4, a9: -0.6, a10: -0.2, a11: -0.5, a12: -0.7 },
+				{ a1: 0.9, a2: -1.1, a3: 1, a4: 0.1, a5: -1.1, a6: -0.9, a7: -0.8, a8: -0.1, a9: 1.2, a10: -0.5, a11: 0.8, a12: -0.1 },
+				{ a1: 1, a2: 0.1, a3: -1, a4: 0.6, a5: -0.1, a6: -0.7, a7: -0.1, a8: -0.6, a9: -0.4, a10: -0.5, a11: -0.6, a12: -0.1 }
 			]
 		},
 		{
@@ -329,6 +336,7 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 		this.colourModeIndex = newColourModeIndex;
 		return this;
 	},
+	// TODO: Use web worker if available, fall back to below approach if not
 	update: function() {
 		// NOTE: Eclipse incorrectly warns: "The local variable [foo] is never read"
 		var i = 0, that = this,
@@ -355,13 +363,23 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 			top = this.rowToY(this.canvas.height),
 			bottom = this.rowToY(0),
 			// Previous X co-ordinate, for colouring
-			previousX = 0;
+			previousX = 0
+		;
 		// Running total of Lyapunov exponent
 		this.lyapunov = 0;
 		this.stop();
-		this.running = true;
-		this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-		this.imageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
+		// The following is wrapped in a setImmediate to give the preceding stop() a chance to take effect.
+		// If this is not done, multiple updates can run in pseudo-parallel, yielding corrupt drawing.
+		// This occurs despite the fact that current Javascript interpreters are single-threaded.
+		setImmediate(function() {
+			that.running = true;
+			that.context.clearRect(0, 0, that.canvas.width, that.canvas.height);
+			that.imageData = that.context.getImageData(0, 0, that.canvas.width, that.canvas.height);
+			setImmediate(function() {
+				that.$canvas.trigger(AttractorCanvas.eventNames.renderStart);
+				updateFunc.call(that);
+			});
+		});
 		function updateFunc() {
 			var next, nextd, r, rgb, dx, nexte, end = i + Math.min(this.iterations, 1000);
 			for (/* NOP */;
@@ -407,13 +425,19 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 					return;
 				}
 				// Iterate the point
-				next = sys.iterate(x, y, params);
-				if (isNaN(next.x) || isNaN(next.y)) {
-					// TODO: User-visible messaging
-					debug("IterFunc args were ", x, y, params);
+				try {
+					next = sys.iterate(x, y, params);
+				} catch (e) {
 					this.running = false;
 					this.$canvas.trigger(AttractorCanvas.eventNames.renderStop);
-					throw "Iteration function returned NaN";
+					this.$canvas.trigger(AttractorCanvas.eventNames.iterFuncRuntimeError, {x: x, y: y, exception: e});
+					return;
+				}
+				if (isNaN(next.x) || isNaN(next.y)) {
+					this.running = false;
+					this.$canvas.trigger(AttractorCanvas.eventNames.renderStop);
+					this.$canvas.trigger(AttractorCanvas.eventNames.iterFuncRuntimeError, {x: x, y: y, exception: null});
+					return;
 				}
 				dx = Math.abs(x - next.x), dy = Math.abs(y - next.y);
 				// Detect point attractors
@@ -470,13 +494,10 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 					updateFunc.call(that);
 				});
 			} else {
+				this.running = false;
 				this.$canvas.trigger(AttractorCanvas.eventNames.renderStop);
 			}
 		}
-		setImmediate(function() {
-			that.$canvas.trigger(AttractorCanvas.eventNames.renderStart);
-			updateFunc.call(that);
-		});
 	},
 	getLyapunovExponent: function() {
 		return this.lyapunov;
@@ -488,6 +509,7 @@ $.extend(AttractorCanvas, {
 	eventNames: {
 		renderStart: 'Attractor.renderStart',
 		renderStop:  'Attractor.renderStop',
-		renderProgress: 'Attractor.renderProgress'
+		renderProgress: 'Attractor.renderProgress',
+		iterFuncRuntimeError: 'Attractor.iterFuncRuntimeError'
 	}
 });

@@ -1,50 +1,133 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Attractor Canvas</title>
-<link rel="stylesheet" href="styles.css" type="text/css" media="screen" />
-<link rel="stylesheet" type="text/css" href="../lib/jquery-ui/themes/base/jquery.ui.all.css" />
-<script type="text/javascript" src="../lib/jquery/dist/jquery.js"></script>
-<script type="text/javascript" src="../lib/jquery-ui/ui/jquery.ui.core.js"></script>
-<script type="text/javascript" src="../lib/jquery-ui/ui/jquery.ui.widget.js"></script>
-<script type="text/javascript" src="../lib/jquery-ui/ui/jquery.ui.mouse.js"></script>
-<script type="text/javascript" src="../lib/jquery-ui/ui/jquery.ui.resizable.js"></script>
-<script type="text/javascript" src="../lib/jquery-ui/ui/jquery.ui.progressbar.js"></script>
-<script type="text/javascript" src="../lib/jsdebug/debug.js"></script>
-<script type="text/javascript" src="../lib/js-lib/colours.js"></script>
-<script type="text/javascript" src="../lib/js-lib/canvas.js"></script>
-<script type="text/javascript" src="../lib/js-lib/setImmediate.js"></script>
-<script type="text/javascript" src="attractor.js"></script>
-<script type="text/javascript" src="scripts.js"></script>
+  <meta charset="UTF-8">
+  <title>Attractor Canvas</title>
+  <link rel="stylesheet" href="styles.css" type="text/css" media="screen" />
+  <link rel="stylesheet" type="text/css" href="../lib/jquery-ui/jquery-ui-1.10.2.custom.min.css" />
+  <script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+  <script type="text/javascript" src="../lib/jquery-ui/jquery-ui-1.10.2.custom.min.js"></script>
+  <script type="text/javascript" src="../lib/jsdebug/debug.js"></script>
+  <script type="text/javascript" src="../lib/js-lib/colours.js"></script>
+  <script type="text/javascript" src="../lib/js-lib/canvas.js"></script>
+  <script type="text/javascript" src="../lib/js-lib/setImmediate.js"></script>
+  <script type="text/javascript" src="attractor.js"></script>
+  <script type="text/javascript" src="scripts.js"></script>
 </head>
 <body>
 
-<h1>Iterated mappings of the complex plane onto itself</h1>
+<h1>Strange Attractors</h1>
 
 <p>Clicking on an area centres the view there and zooms in by a factor of two.</p>
 
-<div id="resizable">
-<canvas id="canvas" width="400" height="400"></canvas>
+<div id="resizable" contextmenu="canvasMenu">
+  <canvas id="canvas" width="400" height="400">
+    Either your browser does not support the HTML5 Canvas, or its Javascript functionality is disabled (or both).
+    As a result, this program cannot operate.
+  </canvas>
 </div>
 
+<menu type="context" id="canvasMenu">
+  <menuitem label="Zoom in" id="menuZoomIn"></menuitem>
+  <menuitem label="Zoom out" id="menuZoomOut"></menuitem>
+</menu>
+
 <div id="controls">
-<table>
-<tr><td>Lyapunov exponent</td><td><span id="lyapunovExponent"></span></td></tr>
-<tr><td>Mouse X</td><td><span id="mousex"></span></td></tr>
-<tr><td>Mouse Y</td><td><span id="mousey"></span></td></tr>
-<tr><td>Centre X</td><td><input id="centrex"></td></tr>
-<tr><td>Centre Y</td><td><input id="centrey"></td></tr>
-<tr><td>Zoom</td><td><input id="zoomFactor"></td></tr>
-<tr><td>Iterations</td><td><input id="iterationsMax"></td></tr>
-<tr><td>System</td><td><select id="system"></select></td></tr>
-<tr><td>Iteration Function</td><td><textarea id="iterFuncDetails" readonly="readonly" rows="5" cols="40"></textarea></td></tr>
-<tr><td>Parameter Set</td><td><select id="selectParameterSet"></select></td></tr>
-<tr><td>Parameter Values</td><td><textarea id="parameterSetDetails" readonly="readonly" rows="5" cols="40"></textarea></td></tr>
-<tr><td>Colour mode</td><td><select id="selectColourMode"></select></td></tr>
-<tr><td colspan="2"><button id="zoomIn">Zoom in</button><button id="zoomOut">Zoom out</button><button id="stop">Stop</button></td></tr>
-<tr><td colspan="2"><div id="renderProgress"></div></td></tr>
-</table>
+  <table>
+    <tr>
+      <td>Lyapunov exponent</td>
+      <td><span id="lyapunovExponent"></span></td>
+    </tr>
+    <tr>
+      <td>Mouse X</td>
+      <td><span id="mousex"></span></td>
+    </tr>
+    <tr>
+      <td>Mouse Y</td>
+      <td><span id="mousey"></span></td>
+    </tr>
+    <tr>
+      <td>Centre X</td>
+      <td><input id="centrex" class="numeric" type="number"></td>
+    </tr>
+    <tr>
+      <td>Centre Y</td>
+      <td><input id="centrey" class="numeric" type="number"></td>
+    </tr>
+    <tr>
+      <td>Zoom</td>
+      <td><input id="zoomFactor" class="numeric" type="number"></td>
+    </tr>
+    <tr>
+      <td>Iterations</td>
+      <td><input id="iterationsMax" class="numeric" type="number"></td>
+    </tr>
+    <tr>
+      <td>System</td>
+      <td><select id="system"></select></td>
+    </tr>
+    <tr>
+      <td>Iteration Function</td>
+      <td>
+        <textarea id="iterFuncDetails" readonly="readonly" rows="5" cols="40"></textarea>
+      </td>
+    </tr>
+    <tr>
+      <td>Parameter Set</td>
+      <td><select id="selectParameterSet"></select></td>
+    </tr>
+    <tr>
+      <td>Parameter Values</td>
+      <td>
+        <textarea id="parameterSetDetails" readonly="readonly" rows="5" cols="40"></textarea>
+      </td>
+    </tr>
+    <tr>
+      <td>Colour mode</td>
+      <td><select id="selectColourMode"></select></td>
+    </tr>
+    <tr>
+      <td colspan="2">
+        <button id="zoomIn">Zoom in</button>
+        <button id="zoomOut">Zoom out</button>
+        <button id="stop">Stop</button>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="2">
+        <div style="position: relative">
+          <div id="renderProgress"></div>
+          <div id="renderProgressText"></div>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div id="errMsgBadIterFunc" class="errorMessage" title="Error">
+  <p>
+    The code for the custom system's iteration function did not compile.
+    It is probably not valid Javascript code.
+  </p>
+  <p>The following errors were encountered:</p>
+  <p id="errDetailsIterFunc"></p>
+</div>
+<div id="errMsgBadParamSet" class="errorMessage" title="Error">
+  <p>
+    The expression for the custom parameter set could not be evaluated.
+    It is probably not a valid Javascript expression.
+  </p>
+  <p>The following errors were encountered:</p>
+  <p id="errDetailsParamSet"></p>
+</div>
+<div id="errMsgBadIterFuncRuntime" class="errorMessage" title="Error">
+  <p>
+    The custom system's iteration function either encountered a runtime error or did not return a valid point.
+    Its code is syntactically valid Javascript, so there is probably either a bug in it,
+    or it cannot handle the parameter values it was given.
+  </p>
+  <p>The last arguments given to the function and exception encountered (if any) were:</p>
+  <p id="errDetailsIterFuncRuntime"></p>
 </div>
 
 </body>

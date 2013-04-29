@@ -1,9 +1,3 @@
-function compileExpr(text) {
-	return eval(
-		'(' + text + ')'
-	);
-}
-
 (function($) {
 	$(function() {
 		var $canvas = $('#canvas'),
@@ -25,7 +19,30 @@ function compileExpr(text) {
 			buttonStop = $('#stop'),
 			attractor = new AttractorCanvas.Attractor($canvas),
 			resizable = $('#resizable'),
-			renderProgress = $('#renderProgress');
+			renderProgress = $('#renderProgress'),
+			renderProgressText = $('#renderProgressText'),
+			errMsgBadIterFunc = $('#errMsgBadIterFunc'),
+			errDetailsIterFunc = $('#errDetailsIterFunc'),
+			errMsgBadIterFuncRuntime = $('#errMsgBadIterFuncRuntime'),
+			errDetailsIterFuncRuntime = $('#errDetailsIterFuncRuntime'),
+			errMsgBadParamSet = $('#errMsgBadParamSet'),
+			errDetailsParamSet = $('#errDetailsParamSet'),
+			menuZoomIn = $('#menuZoomIn'),
+			menuZoomOut = $('#menuZoomOut'),
+			errorDialogOpts
+		;
+		// This forces expression context, and also seems to help the JIT.
+		function compileExpr(text) {
+			return eval(
+				'(' + text + ')'
+			);
+		}
+		// Enable jQuery UI buttons
+		$("button").button();
+		// Enable jQuery UI spinners
+		$('textfield.numeric, input[type="number"], input.numeric').spinner();
+		// Enable jQuery UI menus for selects
+		$('select').menu();
 		function populateSystems() {
 			$(AttractorCanvas.Attractor.prototype.systems).each(function(i, system) {
 				var option = $(document.createElement('option'));
@@ -38,7 +55,7 @@ function compileExpr(text) {
 			selectParameterSet.empty();
 			$(AttractorCanvas.Attractor.prototype.systems[systemIndex].parameterSets).each(function(i, parameterSet) {
 				var option = $(document.createElement('option'));
-				option.text(JSON.stringify(parameterSet));
+				option.text(JSON.stringify(parameterSet, null, ' '));
 				option.val(i);
 				selectParameterSet.append(option);
 			});
@@ -77,19 +94,19 @@ function compileExpr(text) {
 			attractor.zoomInBy(2);
 			update();
 		});
-		editCentreX.on('change', function() {
+		editCentreX.on('spinchange', function() {
 			attractor.setCentre(parseFloat($(this).val()), attractor.getCentre()[1]);
 			update();
 		});
-		editCentreY.on('change', function() {
+		editCentreY.on('spinchange', function() {
 			attractor.setCentre(attractor.getCentre()[0], parseFloat($(this).val()));
 			update();
 		});
-		editZoomLevel.on('change', function() {
+		editZoomLevel.on('spinchange', function() {
 			attractor.setZoom(parseFloat($(this).val()));
 			update();
 		});
-		editMaxIterations.on('change', function() {
+		editMaxIterations.on('spinchange', function() {
 			attractor.setIterations(parseInt($(this).val(), 10));
 			update();
 		});
@@ -118,38 +135,49 @@ function compileExpr(text) {
 			attractor.setParameterSetIndex(parameterSetIndex);
 			update();
 		});
+		errorDialogOpts = {
+			modal: true,
+			minWidth: 200,
+			buttons: [
+				{
+					text: "Dismiss",
+					click: function() {
+						$(this).dialog("close");
+					}
+				}
+			]
+		};
 		iterFuncDetails.on('change', function() {
-			var code = $(this).val();
 			var func;
 			try {
-				func = compileExpr(code);
+				func = compileExpr($(this).val());
+				attractor.setCustomIterationFunction(func);
+				update();
 			} catch (e) {
-				debug('Cannot compile given code: ' + code + ': ' + e);
-				return;
+				errDetailsIterFunc.text('' + e);
+				errMsgBadIterFunc.dialog(errorDialogOpts);
 			}
-			attractor.setCustomIterationFunction(func);
-			update();
 		});
 		parameterSetDetails.on('change', function() {
-			var val, text = $(this).val();
+			var val;
 			try {
-				val = compileExpr(text);
+				val = compileExpr($(this).val());
+				attractor.setCustomParameterSet(val);
+				update();
 			} catch (e) {
-				debug('Cannot evaluate given expression: ' + expr + ': ' + e);
-				return;
+				errDetailsParamSet.text('' + e);
+				errMsgBadParamSet.dialog(errorDialogOpts);
 			}
-			attractor.setCustomParameterSet(val);
-			update();
 		});
 		selectColourMode.on('change', function() {
 			attractor.setColourModeIndex($(this).val());
 			update();
 		});
-		buttonZoomIn.on('click', function() {
+		buttonZoomIn.add(menuZoomIn).on('click', function() {
 			attractor.zoomInBy(2);
 			update();
 		});
-		buttonZoomOut.on('click', function() {
+		buttonZoomOut.add(menuZoomOut).on('click', function() {
 			attractor.zoomOutBy(2);
 			update();
 		});
@@ -165,13 +193,23 @@ function compileExpr(text) {
 			update();
 		});
 		$canvas.on(AttractorCanvas.eventNames.renderStart, function(event) {
-			renderProgress.progressbar('option', 'value', 0);
-			buttonStop.removeAttr('disabled');
+			buttonStop.button('option', 'disabled', false);
+			$canvas.trigger(AttractorCanvas.eventNames.renderProgress, 0);
+			renderProgress.progressbar('enable');
 		}).on(AttractorCanvas.eventNames.renderStop, function(event) {
-			renderProgress.progressbar('option', 'value', 100);
-			buttonStop.attr('disabled', 'disabled');
+			buttonStop.button('option', 'disabled', true);
+			$canvas.trigger(AttractorCanvas.eventNames.renderProgress, 1);
+			renderProgress.progressbar('disable');
 		}).on(AttractorCanvas.eventNames.renderProgress, function(event, proportionDone) {
 			renderProgress.progressbar('option', 'value', proportionDone * 100);
+			renderProgressText.text((1 === proportionDone) ? 'Finished' : (Math.floor(proportionDone * 100) + '% complete'));
+		}).on(AttractorCanvas.eventNames.iterFuncRuntimeError, function(event, data) {
+			var msg = 'x: ' + data.x + ', y: ' + data.y;
+			if (data.exception !== null) {
+				msg = msg + ', error: ' + data.exception;
+			}
+			errDetailsIterFuncRuntime.text(msg);
+			errMsgBadIterFuncRuntime.dialog(errorDialogOpts);
 		});
 		populateSystems();
 		populateParameterSets(0);

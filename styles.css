@@ -9,10 +9,27 @@
        padding: 10px;
 }
 
-button {
-       margin: 5px;
-}
-
 #renderProgress {
        height: 1em;
+}
+
+/**
+ * Some of the values in the <select>s are way too long :-(
+ */
+ select {
+ 	max-width: 40em;
+ }
+ 
+#renderProgressText {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 99;
+	text-align: center;
+}
+
+.errorMessage {
+	display: none;
 }
