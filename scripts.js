@@ -40,7 +40,7 @@
 		// Enable jQuery UI buttons
 		$("button").button();
 		// Enable jQuery UI spinners
-		$('textfield.numeric, input[type="number"], input.numeric').spinner();
+		$('textfield.numeric, input.numeric').spinner();
 		// Enable jQuery UI menus for selects
 		$('select').menu();
 		function populateSystems() {
