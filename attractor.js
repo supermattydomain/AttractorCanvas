@@ -50,7 +50,7 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 		{
 			name: 'Prev X co-ord',
 			getColour: function(i, r, c, previousX) {
-				return hsv2rgb(360 * previousX, 1, 1);
+				return hsv2rgb(previousX, 1, 1);
 			}
 		},
 		{
@@ -413,7 +413,10 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 							return; // Cycle detected
 						}
 					}
-					rgb = colourFunc(i, r, c, previousX);
+					if (previousX < 0) {
+						previousX += that.canvas.width;
+					}
+					rgb = colourFunc(i, r, c, this.xToCol(previousX) / that.canvas.width);
 					setPixel(this.imageData, c, r, rgb[0], rgb[1], rgb[2], 255);
 				}
 				// Detect infinite attractors
