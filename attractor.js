@@ -387,7 +387,7 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 				i++, previousX = x, x = next.x, y = next.y
 			) {
 				if (!this.running) {
-					debug('Stopped');
+					$().toastmessage('showNoticeToast', 'Stopped');
 					this.$canvas.trigger(AttractorCanvas.eventNames.renderStop);
 					return; // Aborted
 				}
@@ -418,8 +418,7 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 				}
 				// Detect infinite attractors
 				if (x < xmin || x > xmax || y < ymin || y > ymax) {
-					// TODO: User-visible messaging
-					debug('Infinite attractor detected after ' + i + ' iterations');
+					$().toastmessage('showNoticeToast', 'Infinite attractor detected after ' + i + ' iterations');
 					this.running = false;
 					this.$canvas.trigger(AttractorCanvas.eventNames.renderStop);
 					return;
@@ -442,8 +441,7 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 				dx = Math.abs(x - next.x), dy = Math.abs(y - next.y);
 				// Detect point attractors
 				if (dx < eta && dy < eta && i > minIterations) {
-					// TODO: User-visible messaging
-					debug('Point attractor detected after ' + i + ' iterations');
+					$().toastmessage('showNoticeToast', 'Point attractor detected after ' + i + ' iterations');
 					this.running = false;
 					this.$canvas.trigger(AttractorCanvas.eventNames.renderStop);
 					return;
@@ -466,7 +464,7 @@ $.extend(AttractorCanvas.Attractor.prototype, {
 					}
 					this.lyapunov += Math.log(nextd / d0);
 					if (isNaN(this.lyapunov)) {
-						debug(this.lyapunov, nextd, d0);
+						$().toastmessage('showErrorToast', this.lyapunov + ' ' + nextd + ' ' + d0);
 						this.running = false;
 						this.$canvas.trigger(AttractorCanvas.eventNames.renderStop);
 						throw "NaN lyapunov exponent 2";
