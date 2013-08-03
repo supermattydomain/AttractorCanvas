@@ -556,7 +556,7 @@ $.extend(AttractorCanvas, {
 		}
 		// Enable jQuery UI buttons
 		$("button").button();
-		// Enable jQuery UI spinners
+		// Enable jQuery UI spinners (but not on input[type="number"] due to a jQuery UI conflict with native spinners)
 		$('textfield.numeric, input.numeric').spinner();
 		// Enable jQuery UI menus for selects
 		$('select').menu();
